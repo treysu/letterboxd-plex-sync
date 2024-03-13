@@ -1,0 +1,3 @@
+Dockerfile
+python/.venv
+python/.venv/*

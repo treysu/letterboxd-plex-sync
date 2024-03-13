@@ -1,0 +1,6 @@
+python/letterboxed_link_to_tmdb_mapping.csv
+python/.venv
+python/.venv/*
+python/__pycache__
+python/__pycache__/*
+
