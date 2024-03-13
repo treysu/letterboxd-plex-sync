@@ -246,13 +246,19 @@ def main():
     account = MyPlexAccount(token=token)
 
     # get optional environment variable
-    plex_user_name = os.getenv('PLEX_USER')
+    #plex_user_name = os.getenv('PLEX_USER')
+    try:
+        plex_user_name = lbs_config['Plex']['user']
+    except KeyError:
+        plex_user_name = None
+
 
     if plex_user_name is not None:
 
-        plex_user_pin = os.getenv(
-            'PLEX_PIN'
-        )  # default None value is OK if no pin is set
+        try:
+            plex_user_pin = lbs_config['Plex']['pin']  # default None value is OK if no pin is set
+        except KeyError:
+            plex_user_pin = None
         user = account.switchHomeUser(user=plex_user_name, pin=plex_user_pin)
         user_server = plex.switchUser(plex_user_name)
     else:
