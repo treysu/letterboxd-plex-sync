@@ -180,7 +180,7 @@ def main():
     
     download_letterboxd_data = os.getenv('DOWNLOAD_LETTERBOXD_DATA', 'true') == 'true'
     map_letterboxd_to_tmdb = os.getenv('MAP_LETTERBOXD_TO_TMDB', 'true') == 'true'
-    reset_plex_data = os.getenv('RESET_PLEX_DATA', 'false') == 'true'
+    #reset_plex_data = os.getenv('RESET_PLEX_DATA', 'false') == 'true'
 
     sync_watchlist = os.getenv('SYNC_WATCHLIST', 'true') == 'true'
     sync_watched = os.getenv('SYNC_WATCHED', 'true') == 'true'
@@ -229,9 +229,9 @@ def main():
         populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
         populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'))
 
-    if reset_plex_data:
-        reset_plex_watchlist(account)
-        reset_plex_library(movies_library)
+    #if reset_plex_data:
+    #    reset_plex_watchlist(account)
+    #    reset_plex_library(movies_library)
 
     load_existing_mapping()
 
