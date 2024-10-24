@@ -27,7 +27,7 @@ The script relies on several environment variables for configuration. Here is a 
 ### Optional Environment Variables
 - **`PLEX_USER`**: The Plex user to use for syncing, if not the default admin.
 - **`PLEX_PIN`**: The PIN associated with the Plex user, if required.
-- **`CRON_SCHEDULE`**: The schedule for the cron job (e.g., `0 */6 * * *` for every 6 hours). Defaults to `0 */6 * * *`.
+- **`CRON_SCHEDULE`**: The schedule for the cron job (e.g., `0 4 */1 * *` for every day at 4:00AM). Defaults to `0 4 */1 * *`.
 - **`RUN_NOW`**: Set to `true` to run the sync job immediately when the container starts. Defaults to `false`.
 - **`DOWNLOAD_LETTERBOXD_DATA`**: Set to `true` to download Letterboxd data. Defaults to `true`.
 - **`MAP_LETTERBOXD_TO_TMDB`**: Set to `true` to map Letterboxd URLs to TMDB IDs. Defaults to `true`.
@@ -38,8 +38,8 @@ The script relies on several environment variables for configuration. Here is a 
 
 ### Example `letterboxd.env`
 ```env
-# Schedule for the cron job (default: every 6 hours)
-CRON_SCHEDULE="0 */6 * * *"
+# Schedule for the cron job (default: every day at 4:00AM)
+CRON_SCHEDULE="0 4 */1 * *"
 
 # Immediately run the sync job on container startup (default: false)
 RUN_NOW="false"

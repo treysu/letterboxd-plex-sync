@@ -12,8 +12,8 @@ else
   echo "RUN_NOW is not set. Proceeding with regular cron schedule."
 fi
 
-# Use the CRON_SCHEDULE environment variable or default to every 6 hours
-CRON_SCHEDULE=${CRON_SCHEDULE:-"0 */6 * * *"}
+# Use the CRON_SCHEDULE environment variable or default to every dat at 4am
+CRON_SCHEDULE=${CRON_SCHEDULE:-"0 4 */1 * *"}
 
 # Export environment variables to a file
 printenv | grep -v "no_proxy" > /etc/environment
