@@ -44,7 +44,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/your-repo-name:${{ env.TAG }}
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ env.TAG }}
 
       # Optionally, add a unique Git commit SHA tag
       - name: Push with Git SHA Tag
@@ -52,4 +52,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/your-repo-name:${{ github.sha }}
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ github.sha }}
