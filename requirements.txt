@@ -1,3 +1,0 @@
-letterboxd_stats==0.2.14
-PlexAPI==4.15.16
-toml==0.10.2
