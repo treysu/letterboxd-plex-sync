@@ -1,6 +1,6 @@
 # 🎭 Letterboxd Plex Sync
 
-A work-in-progress script that syncs [Letterboxd](https://letterboxd.com/) user data (like ratings, watch history, and watchlists) to a personal [Plex](https://www.plex.tv/) server. This tool aims to enhance your Plex experience by keeping your viewing stats up to date with your Letterboxd profile! 🚀
+A tool that syncs [Letterboxd](https://letterboxd.com/) user data (ratings, watch history, and watchlists) to a personal [Plex](https://www.plex.tv/) server. This tool aims to enhance your Plex experience by keeping your viewing stats up to date with your Letterboxd profile! 🚀
 
 ## 🔧 How It Works
 
@@ -36,6 +36,43 @@ The script relies on several environment variables for configuration. Here is a 
 - **`SYNC_RATINGS`**: Set to `true` to sync user ratings from Letterboxd to Plex. Defaults to `true`.
 
 
+### Example `letterboxd.env`
+```env
+# Schedule for the cron job (default: every 6 hours)
+CRON_SCHEDULE="0 */6 * * *"
+
+# Immediately run the sync job on container startup (default: false)
+RUN_NOW="false"
+
+# Debug mode (default: false)
+DEBUG="false"
+
+# Plex server configuration (required)
+PLEX_BASEURL="http://your-plex-server:32400"
+PLEX_TOKEN="your_plex_token_here"
+
+# Plex user details (optional)
+PLEX_USER="your_plex_username"    # Optional: switch to a specific Plex user
+PLEX_PIN="your_plex_pin_here"     # Optional: required if switching Plex user
+
+# Letterboxd credentials (required for downloading data)
+LB_USERNAME="your_letterboxd_username"
+LB_PASSWORD="your_letterboxd_password"
+
+# TMDB API key (required for TMDB lookups)
+TMDB_API_KEY="your_tmdb_api_key_here"
+
+# Flags to control script behavior
+DOWNLOAD_LETTERBOXD_DATA="true"   # Set to "true" to download Letterboxd data (default: true)
+MAP_LETTERBOXD_TO_TMDB="true"     # Set to "true" to map Letterboxd URLs to TMDB IDs (default: true)
+
+# Sync options (set to "true" or "false" to enable/disable; default: true)
+SYNC_WATCHLIST="true"
+SYNC_WATCHED="true"
+SYNC_RATINGS="true"
+```
+
+
 ## 🛠️ Running the Script
 
 There are multiple ways to run the `letterboxd_plex_sync` script:
@@ -45,6 +82,9 @@ There are multiple ways to run the `letterboxd_plex_sync` script:
 Here's a sample Docker Compose setup to run the `letterboxd_plex_sync` script as a cron job:
 
 ```yaml
+---
+name: letterboxd-plex-sync
+services:
   letterboxd-plex-sync:
     <<: [*general, *plexdependant]
     container_name: letterboxd-plex-sync
@@ -91,7 +131,7 @@ If you prefer to run the script locally without Docker:
 1. **Clone the Repository**:  
    ```sh
    git clone https://github.com/treysu/letterboxd-plex-sync.git
-   cd letterboxd-plex-sync
+   cd letterboxd-plex-sync/python
    ```
 
 2. **Install Dependencies**:  
@@ -104,6 +144,7 @@ If you prefer to run the script locally without Docker:
    Make sure your `letterboxd.env` file is properly set up with your Plex and Letterboxd credentials, then run the script:
    ```sh
    source letterboxd.env
+   python generate_config.py
    python sync_lb_to_plex.py
    ```
 
