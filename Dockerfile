@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set working directory
 WORKDIR /app
 
-# Copy application files
+# Copy application files 
 COPY ./python/sync_lb_to_plex.py .
 COPY ./python/timing.py .
 COPY ./python/requirements.txt .
