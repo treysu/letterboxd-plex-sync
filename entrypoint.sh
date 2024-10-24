@@ -17,4 +17,4 @@ echo "Starting cron..."
 cron
 
 # Keep the container running by tailing the logs
-tail -f /var/log/cron.log
+tail -f /var/log/syslog

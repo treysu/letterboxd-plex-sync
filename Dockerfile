@@ -18,12 +18,14 @@ COPY ./python/requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create necessary files
-RUN touch output.txt error.txt
-
 # Add crontab file and set permissions
 COPY cron/crontab /etc/cron.d/crontab
 RUN chmod 0644 /etc/cron.d/crontab && crontab /etc/cron.d/crontab
+
+# Configure cron to log to /var/log/cron.log
+#RUN touch /var/log/cron.log && \
+#    echo "cron.* /var/log/cron.log" >> /etc/rsyslog.d/cron.conf && \
+#    service rsyslog start
 
 # Add an entrypoint script to check RUN_NOW and run the job if needed
 COPY entrypoint.sh /entrypoint.sh
