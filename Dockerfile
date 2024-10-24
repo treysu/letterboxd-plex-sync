@@ -14,6 +14,7 @@ COPY ./python/generate_config.py .
 COPY ./python/sync_lb_to_plex.py .
 COPY ./python/timing.py .
 COPY ./python/requirements.txt .
+COPY .sync_job_warpper.sh .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
@@ -25,6 +26,8 @@ RUN chmod 0644 /etc/cron.d/crontab_template
 # Add an entrypoint script to check RUN_NOW and run the job if needed
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+RUN chmod +x ./sync_job_wrapper.sh
+
 
 
 # Use the entrypoint script to handle RUN_NOW logic
