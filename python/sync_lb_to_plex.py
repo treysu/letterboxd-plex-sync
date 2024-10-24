@@ -203,6 +203,8 @@ from plexapi.myplex import MyPlexAccount
 
 def main():
     """Main function to sync Letterboxd data with Plex."""
+    generate_config_toml()
+    
     download_letterboxd_data = os.getenv('DOWNLOAD_LETTERBOXD_DATA', 'True') == 'True'
     map_letterboxd_to_tmdb = os.getenv('MAP_LETTERBOXD_TO_TMDB', 'True') == 'True'
     reset_plex_data = os.getenv('RESET_PLEX_DATA', 'False') == 'True'
