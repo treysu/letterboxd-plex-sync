@@ -225,9 +225,9 @@ def main():
 
     if map_letterboxd_to_tmdb:
         print('Mapping Letterboxd links to TMDB ID...')
-        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_RATINGS_CSV', 'static/ratings.csv'))
-        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHLIST_CSV', 'static/watchlist.csv'))
-        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHED_CSV', 'static/watched.csv'))
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'))
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'))
 
     if reset_plex_data:
         reset_plex_watchlist(account)
@@ -236,11 +236,11 @@ def main():
     load_existing_mapping()
 
     if sync_watchlist:
-        sync_plex_watchlist_from_letterboxd(user, os.getenv('LETTERBOXD_WATCHLIST_CSV', 'static/watchlist.csv'))
+        sync_plex_watchlist_from_letterboxd(user, os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
     if sync_watched:
-        sync_plex_watched_status_from_letterboxd(os.getenv('LETTERBOXD_WATCHED_CSV', 'static/watched.csv'))
+        sync_plex_watched_status_from_letterboxd(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'))
     if sync_ratings:
-        sync_plex_ratings_from_letterboxd(os.getenv('LETTERBOXD_RATINGS_CSV', 'static/ratings.csv'))
+        sync_plex_ratings_from_letterboxd(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'))
 
     print('Sync process complete.')
 
