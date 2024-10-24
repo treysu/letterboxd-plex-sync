@@ -15,7 +15,7 @@ current_script_dir = os.path.dirname(current_script_path)
 os.chdir(current_script_dir)
 
 # Path to the CSV that maps Letterboxd URLs to TMDB IDs
-LETTERBOXD_TO_TMDB_CSV = 'resources/lb_URL_to_tmdb_id.csv'
+LETTERBOXD_TO_TMDB_CSV = '/app/data/lb_URL_to_tmdb_id.csv'
 letterboxd_to_tmdb_map = {}
 plex_guid_lookup_table = {}
 
