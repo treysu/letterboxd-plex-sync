@@ -24,7 +24,7 @@ plex_guid_lookup_table = {}
 open(LETTERBOXD_TO_TMDB_CSV, 'a').close()
 
 # Set DEBUG mode based on the environment variable
-DEBUG = os.getenv('DEBUG', 'False') != 'False'
+DEBUG = os.getenv('DEBUG', 'false') != 'false'
 
 def populate_letterboxd_tmdb_mapping_file(csv_path):
     """Build the Letterboxd to TMDB mapping file if necessary."""
@@ -178,13 +178,13 @@ from plexapi.myplex import MyPlexAccount
 def main():
     """Main function to sync Letterboxd data with Plex."""
     
-    download_letterboxd_data = os.getenv('DOWNLOAD_LETTERBOXD_DATA', 'True') == 'True'
-    map_letterboxd_to_tmdb = os.getenv('MAP_LETTERBOXD_TO_TMDB', 'True') == 'True'
-    reset_plex_data = os.getenv('RESET_PLEX_DATA', 'False') == 'True'
+    download_letterboxd_data = os.getenv('DOWNLOAD_LETTERBOXD_DATA', 'true') == 'true'
+    map_letterboxd_to_tmdb = os.getenv('MAP_LETTERBOXD_TO_TMDB', 'true') == 'true'
+    reset_plex_data = os.getenv('RESET_PLEX_DATA', 'false') == 'true'
 
-    sync_watchlist = os.getenv('SYNC_WATCHLIST', 'True') == 'True'
-    sync_watched = os.getenv('SYNC_WATCHED', 'True') == 'True'
-    sync_ratings = os.getenv('SYNC_RATINGS', 'True') == 'True'
+    sync_watchlist = os.getenv('SYNC_WATCHLIST', 'true') == 'true'
+    sync_watched = os.getenv('SYNC_WATCHED', 'true') == 'true'
+    sync_ratings = os.getenv('SYNC_RATINGS', 'true') == 'true'
 
     print('Starting Sync from Letterboxd to Plex')
 
