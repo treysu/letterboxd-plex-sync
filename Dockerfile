@@ -14,7 +14,7 @@ COPY ./python/generate_config.py .
 COPY ./python/sync_lb_to_plex.py .
 COPY ./python/timing.py .
 COPY ./python/requirements.txt .
-COPY ./sync_job_warpper.sh .
+COPY ./sync_job_wrapper.sh .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
