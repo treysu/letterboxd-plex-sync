@@ -15,6 +15,9 @@ fi
 # Use the CRON_SCHEDULE environment variable or default to every 6 hours
 CRON_SCHEDULE=${CRON_SCHEDULE:-"0 */6 * * *"}
 
+# Export environment variables to a file
+printenv | grep -v "no_proxy" > /etc/environment
+
 # Replace the placeholder in the cron template with the actual cron schedule
 sed "s|\${CRON_SCHEDULE}|$CRON_SCHEDULE|g" /etc/cron.d/crontab_template > /etc/cron.d/crontab
 
