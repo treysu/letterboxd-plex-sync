@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy application files
+COPY ./python/generate_config.py .  
 COPY ./python/sync_lb_to_plex.py .
 COPY ./python/timing.py .
 COPY ./python/requirements.txt .
@@ -27,6 +28,7 @@ RUN chmod 0644 /etc/cron.d/crontab && crontab /etc/cron.d/crontab
 # Add an entrypoint script to check RUN_NOW and run the job if needed
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
 
 # Use the entrypoint script to handle RUN_NOW logic
 ENTRYPOINT ["/entrypoint.sh"]
