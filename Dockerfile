@@ -22,11 +22,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY cron/crontab_template /etc/cron.d/crontab_template
 RUN chmod 0644 /etc/cron.d/crontab_template
 
-# Configure cron to log to /var/log/cron.log
-#RUN touch /var/log/cron.log && \
-#    echo "cron.* /var/log/cron.log" >> /etc/rsyslog.d/cron.conf && \
-#    service rsyslog start
-
 # Add an entrypoint script to check RUN_NOW and run the job if needed
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
