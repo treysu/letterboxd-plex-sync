@@ -1,4 +1,4 @@
-# 🎬 Letterboxd Plex Sync
+# 🎭 Letterboxd Plex Sync
 
 A work-in-progress script that syncs [Letterboxd](https://letterboxd.com/) user data (like ratings, watch history, and watchlists) to a personal [Plex](https://www.plex.tv/) server. This tool aims to enhance your Plex experience by keeping your viewing stats up to date with your Letterboxd profile! 🚀
 
@@ -10,114 +10,110 @@ The script leverages:
 
 Currently, it focuses on syncing:
 - ⭐ User ratings
-- 📚 Watch history
-- 📝 Watchlist
+- 📜 Watch history
+- 🗛 Watchlist
 
-## 🐋 Sample Docker Compose Setup
+## 🛠️ Environment Variables
+
+The script relies on several environment variables for configuration. Here is a list of all the environment variables you need to set:
+
+### Required Environment Variables
+- **`PLEX_BASEURL`**: The base URL of your Plex server (e.g., `http://your-plex-server:32400`).
+- **`PLEX_TOKEN`**: Authentication token for accessing your Plex server.
+- **`LB_USERNAME`**: Your Letterboxd username.
+- **`LB_PASSWORD`**: Your Letterboxd password.
+- **`TMDB_API_KEY`**: Your TMDB API key, required for fetching additional metadata.
+
+### Optional Environment Variables
+- **`PLEX_USER`**: The Plex user to use for syncing, if not the default admin.
+- **`PLEX_PIN`**: The PIN associated with the Plex user, if required.
+- **`CRON_SCHEDULE`**: The schedule for the cron job (e.g., `0 */6 * * *` for every 6 hours). Defaults to `0 */6 * * *`.
+- **`RUN_NOW`**: Set to `true` to run the sync job immediately when the container starts. Defaults to `false`.
+- **`DOWNLOAD_LETTERBOXD_DATA`**: Set to `true` to download Letterboxd data. Defaults to `true`.
+- **`MAP_LETTERBOXD_TO_TMDB`**: Set to `true` to map Letterboxd URLs to TMDB IDs. Defaults to `true`.
+- **`SYNC_WATCHLIST`**: Set to `true` to sync the watchlist from Letterboxd to Plex. Defaults to `true`.
+- **`SYNC_WATCHED`**: Set to `true` to sync watched status from Letterboxd to Plex. Defaults to `true`.
+- **`SYNC_RATINGS`**: Set to `true` to sync user ratings from Letterboxd to Plex. Defaults to `true`.
+
+
+## 🛠️ Running the Script
+
+There are multiple ways to run the `letterboxd_plex_sync` script:
+
+### 1. Docker Compose
 
 Here's a sample Docker Compose setup to run the `letterboxd_plex_sync` script as a cron job:
 
 ```yaml
-name: letterboxd_plex_sync
-services:
-  letterboxd_sync:
-    container_name: letterboxd_sync
+  letterboxd-plex-sync:
+    <<: [*general, *plexdependant]
+    container_name: letterboxd-plex-sync
+    image: treysu/letterboxd-plex-sync:dev
     restart: unless-stopped
-    depends_on:
-      - plex
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=US/Mountain
-    stdin_open: true
-    tty: true    
+      PUID: 1002
+      PGID: 1002
     env_file:
-      - path: ./lb_sync/debug.env
-        required: false  
+      - path: letterboxd.env
+        required: true
+      - path: default.env
+        required: true
+
     volumes:
-      # Directory containing config.toml for letterboxd_stats
-      - "~/.config/letterboxd_stats:/root/.config/letterboxd_stats"
-      # Optional: Add resources folder for a pre-generated Letterboxd to TMDb mapping CSV file.
-      - "~/lb_sync/resources:/app/resources"
-    build: https://github.com/treysullivent/letterboxd_plex_sync.git
-    image: letterboxd_plex_sync:dev 
+      - /etc/localtime:/etc/localtime:ro
+      - /mnt/disk3/DockerData/lb_sync/resources:/app/resources:rw # optionally add in a resources folder to add a pre-generated lb to tmdb mapping CSV file.
 ```
 
-## 📝 Configuring `letterboxd_stats/config.toml`
-
-The `letterboxd_plex_sync` script extends the `config.toml` file used by the `letterboxd_stats` Python library. This file is typically located at `~/.config/letterboxd_stats/config.toml` on your system, or you can create it from scratch.
-
-### Adding Plex Configuration
-
-To enable Plex syncing, add the following settings to your `config.toml` file:
+To use Docker Compose:
 
 ```sh
-echo -e "\n\
-[Plex]\n\
-baseurl = 'http://%YOUR_PLEX_BASEIP%:%YOUR_PLEX_PORT%'\n\
-token = '%YOUR_PLEX_TOKEN%'\n\
-\n\
-# Optional: Use a different user than the default (admin)\n\
-user = '%YOUR_LOCAL_PLEX_USER_NAME%'\n\
-\n\
-# Optional: If that user has a PIN\n\
-pin = '%YOUR_LOCAL_USER_PIN%'\n" \
-| sudo tee -a ~/.config/letterboxd_stats/config.toml
+docker compose up -d
 ```
 
-### Example `config.toml`
+### 2. Docker Run
 
-Here’s what your `config.toml` file might look like after adding the required Plex configuration:
+Alternatively, you can run the container directly with Docker:
 
-```toml
-# Where you want the .csv file of your Letterboxd activity to be saved.
-root_folder = "/tmp/"
-
-# The size of the ASCII art poster printed in your terminal when you check the details of a movie. Set to 0 to disable.
-poster_columns = 0
-
-[TMDB]
-api_key = "[%YOUR_TMDB_API_KEY%]"
-
-[Letterboxd]
-username = "%YOUR_LB_USERNAME%"
-password = "%YOUR_LB_PASSWORD%"
-
-# # # # #     NEW SECTION TO FACILITATE PLEX SYNC     # # # # #
-[Plex]
-baseurl = 'http://%YOUR_PLEX_BASEIP%:%YOUR_PLEX_PORT%'
-token = '%YOUR_PLEX_TOKEN%'
-
-# Optional: Use a different user than the default (admin)
-user = '%YOUR_LOCAL_PLEX_USER_NAME%'
-
-# Optional: If that user has a PIN
-pin = '%YOUR_LOCAL_USER_PIN%'
+```sh
+docker run -d \
+  --name letterboxd-plex-sync \
+  --env-file letterboxd.env \
+  --env-file default.env \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /mnt/disk3/DockerData/lb_sync/resources:/app/resources:rw \
+  treysu/letterboxd-plex-sync:dev
 ```
 
-## 🚀 Usage
+### 3. Running Locally
+
+If you prefer to run the script locally without Docker:
 
 1. **Clone the Repository**:  
    ```sh
-   git clone https://github.com/treysullivent/letterboxd-plex-sync.git
+   git clone https://github.com/treysu/letterboxd-plex-sync.git
    cd letterboxd-plex-sync
    ```
 
-2. **Build and Run the Docker Container**:  
-   Use the provided Docker Compose setup to build and run the container:
+2. **Install Dependencies**:  
+   Ensure you have Python installed, then install the required packages:
    ```sh
-   docker compose up -d
+   pip install -r requirements.txt
    ```
 
-3. **Configure Your Environment**:  
-   Make sure your `config.toml` file is properly set up with your Plex and Letterboxd credentials as shown above.
+3. **Run the Script**:  
+   Make sure your `letterboxd.env` file is properly set up with your Plex and Letterboxd credentials, then run the script:
+   ```sh
+   source letterboxd.env
+   python sync_lb_to_plex.py
+   ```
 
-## 🛠 Future Improvements
+## 🛠️ Future Improvements
 
 - 📊 Better handling of multiple Plex users.
 - 🔄 Sync additional types of data (e.g., tags, custom lists).
-- 🎨 Improved logging and error handling.
+- 🎭 Improved logging and error handling.
 
 ## 📣 Contributing
 
 Feel free to open issues or make pull requests. This project is still a work in progress, and contributions are welcome!
+
