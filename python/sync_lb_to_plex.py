@@ -7,7 +7,6 @@ from plexapi.server import PlexServer
 from plexapi.myplex import MyPlexAccount
 
 from letterboxd_stats import web_scraper as ws
-from letterboxd_stats import config as lbs_config
 
 import timing
 
@@ -27,6 +26,31 @@ open(LETTERBOXD_TO_TMDB_CSV, 'a').close()
 # Set DEBUG mode based on the environment variable
 DEBUG = os.getenv('DEBUG', 'False') != 'False'
 
+def generate_config_toml():
+    """Generate the config.toml file using environment variables."""
+    config_content = f"""
+# Where you want the .csv file of your Letterboxd activity to be saved.
+root_folder = "{os.getenv('LB_ROOT_FOLDER', '/tmp/')}"
+
+# The size of the ASCII art poster printed in your terminal when you check the details of a movie. Set to 0 to disable.
+poster_columns = 0
+
+[TMDB]
+api_key = "{os.getenv('TMDB_API_KEY', '')}"
+
+[Letterboxd]
+username = "{os.getenv('LB_USERNAME', '')}"
+password = "{os.getenv('LB_PASSWORD', '')}"
+
+"""
+
+    config_path = os.path.expanduser("~/.config/letterboxd_stats/config.toml")
+    os.makedirs(os.path.dirname(config_path), exist_ok=True)
+
+    with open(config_path, 'w') as config_file:
+        config_file.write(config_content.strip())
+
+    print(f"Generated config.toml at {config_path}")
 
 def populate_letterboxd_tmdb_mapping_file(csv_path):
     """Build the Letterboxd to TMDB mapping file if necessary."""
@@ -173,30 +197,36 @@ def reset_plex_watchlist(user):
         print(f'Removed {video.title} from watchlist.')
 
 
+import os
+from plexapi.server import PlexServer
+from plexapi.myplex import MyPlexAccount
+
 def main():
     """Main function to sync Letterboxd data with Plex."""
-    download_letterboxd_data = True
-    map_letterboxd_to_tmdb = True
-    reset_plex_data = False
+    download_letterboxd_data = os.getenv('DOWNLOAD_LETTERBOXD_DATA', 'True') == 'True'
+    map_letterboxd_to_tmdb = os.getenv('MAP_LETTERBOXD_TO_TMDB', 'True') == 'True'
+    reset_plex_data = os.getenv('RESET_PLEX_DATA', 'False') == 'True'
 
-    sync_watchlist = True
-    sync_watched = True
-    sync_ratings = True
-
-    if download_letterboxd_data:
-        map_letterboxd_to_tmdb = True  # No reason to map if not downloading
+    sync_watchlist = os.getenv('SYNC_WATCHLIST', 'True') == 'True'
+    sync_watched = os.getenv('SYNC_WATCHED', 'True') == 'True'
+    sync_ratings = os.getenv('SYNC_RATINGS', 'True') == 'True'
 
     print('Starting Sync from Letterboxd to Plex')
 
-    # Load Plex and MyPlex account details from the config
-    plex_base_url = lbs_config['Plex']['baseurl']
-    plex_token = lbs_config['Plex']['token']
+    # Load Plex and MyPlex account details from environment variables
+    plex_base_url = os.getenv('PLEX_BASEURL')
+    plex_token = os.getenv('PLEX_TOKEN')
+
+    if not plex_base_url or not plex_token:
+        print("Plex base URL and token are required. Please set them in environment variables.")
+        return
+
     plex = PlexServer(plex_base_url, plex_token)
     account = MyPlexAccount(token=plex_token)
 
-    plex_user_name = lbs_config['Plex'].get('user')
+    plex_user_name = os.getenv('PLEX_USER')
     if plex_user_name:
-        plex_user_pin = lbs_config['Plex'].get('pin')
+        plex_user_pin = os.getenv('PLEX_PIN')
         user = account.switchHomeUser(user=plex_user_name, pin=plex_user_pin)
         plex = plex.switchUser(plex_user_name)
     else:
@@ -220,9 +250,9 @@ def main():
 
     if map_letterboxd_to_tmdb:
         print('Mapping Letterboxd links to TMDB ID...')
-        populate_letterboxd_tmdb_mapping_file(lbs_config['root_folder'] + '/static/ratings.csv')
-        populate_letterboxd_tmdb_mapping_file(lbs_config['root_folder'] + '/static/watchlist.csv')
-        populate_letterboxd_tmdb_mapping_file(lbs_config['root_folder'] + '/static/watched.csv')
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_RATINGS_CSV', 'static/ratings.csv'))
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHLIST_CSV', 'static/watchlist.csv'))
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHED_CSV', 'static/watched.csv'))
 
     if reset_plex_data:
         reset_plex_watchlist(account)
@@ -231,13 +261,14 @@ def main():
     load_existing_mapping()
 
     if sync_watchlist:
-        sync_plex_watchlist_from_letterboxd(user, lbs_config['root_folder'] + '/static/watchlist.csv')
+        sync_plex_watchlist_from_letterboxd(user, os.getenv('LETTERBOXD_WATCHLIST_CSV', 'static/watchlist.csv'))
     if sync_watched:
-        sync_plex_watched_status_from_letterboxd(lbs_config['root_folder'] + '/static/watched.csv')
+        sync_plex_watched_status_from_letterboxd(os.getenv('LETTERBOXD_WATCHED_CSV', 'static/watched.csv'))
     if sync_ratings:
-        sync_plex_ratings_from_letterboxd(lbs_config['root_folder'] + '/static/ratings.csv')
+        sync_plex_ratings_from_letterboxd(os.getenv('LETTERBOXD_RATINGS_CSV', 'static/ratings.csv'))
 
     print('Sync process complete.')
+
 
 
 if __name__ == '__main__':
