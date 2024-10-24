@@ -14,4 +14,6 @@ fi
 
 # Start cron explicitly regardless of RUN_NOW
 echo "Starting cron..."
-cron -f
+cron
+
+tail -f /app/combined_log.txt
