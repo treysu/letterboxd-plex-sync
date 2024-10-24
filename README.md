@@ -48,7 +48,7 @@ Here's a sample Docker Compose setup to run the `letterboxd_plex_sync` script as
   letterboxd-plex-sync:
     <<: [*general, *plexdependant]
     container_name: letterboxd-plex-sync
-    image: treysu/letterboxd-plex-sync:dev
+    image: treysu/letterboxd-plex-sync:latest
     restart: unless-stopped
     environment:
       PUID: 1002
