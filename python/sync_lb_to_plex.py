@@ -3,313 +3,249 @@
 import os
 import sys
 import csv
+import timing
 from plexapi.server import PlexServer
 from plexapi.myplex import MyPlexAccount
-
 from letterboxd_stats import web_scraper as ws
-from letterboxd_stats import config as lbs_config
-
-import timing
-
-# Set pwd the the directory of this script
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-os.chdir(dname)
-
-LB_TO_TMDB_CSV = 'resources/lb_URL_to_tmdb_id.csv'
-lb_to_tmdb_dict = {}
-
-guid_lookup_table = {}
-
-# make sure  file exists
-f = open(LB_TO_TMDB_CSV, 'a')
-f.close()
 
 
-if os.getenv('DEBUG') is None or os.getenv('DEBUG') == 'False':
-    DEBUG = False
-else:
-    DEBUG = True
+# Change the current working directory to the location of this script
+current_script_path = os.path.abspath(__file__)
+current_script_dir = os.path.dirname(current_script_path)
+os.chdir(current_script_dir)
 
+# Path to the CSV that maps Letterboxd URLs to TMDB IDs
+LETTERBOXD_TO_TMDB_CSV = 'resources/lb_URL_to_tmdb_id.csv'
+letterboxd_to_tmdb_map = {}
+plex_guid_lookup_table = {}
 
-def build_lb_tmdb_mapping_file(csv_input):
+# Ensure the Letterboxd-to-TMDB CSV file exists
+open(LETTERBOXD_TO_TMDB_CSV, 'a').close()
 
-    build_mapping_dict()
+# Set DEBUG mode based on the environment variable
+DEBUG = os.getenv('DEBUG', 'false') != 'false'
 
-    csvf = open(csv_input, 'r')
-    reader = csv.reader(csvf, delimiter=',')
-    next(reader)  # skip header
+def populate_letterboxd_tmdb_mapping_file(csv_path):
+    """Build the Letterboxd to TMDB mapping file if necessary."""
+    load_existing_mapping()
 
-    temp_str = ''
+    with open(csv_path, 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        next(reader)  # Skip the header
 
-    for row in reader:
+        new_mappings = ''
+        for row in reader:
+            lb_title = row[1]
+            lb_url = row[3]
 
-        lb_title = row[1]
-        lb_link = row[3]
+            if lb_url not in letterboxd_to_tmdb_map:
+                try:
+                    tmdb_id = ws.get_tmdb_id(lb_url, False)
+                except Exception:
+                    if DEBUG:
+                        print(f"Failed to scrape TMDB ID for {lb_title}")
+                    continue
 
-        if not lb_link in lb_to_tmdb_dict:  # check for id in previous mappings list
-            try:
-                tmdb_id = ws.get_tmdb_id(lb_link, False)  # use web scraper to get ID
-            except:
+                new_mappings += f"{lb_url},{tmdb_id}\n"
                 if DEBUG:
-                    print('Failed to scrape TMDB ID for ' + lb_title)
-                continue
+                    print(f"Added mapping for {lb_title}")
 
-            try:
-                temp_str = (
-                    temp_str + lb_link + ',' + str(tmdb_id) + '\n'
-                )  # add to list for next time
-                if DEBUG:
-                    print('Added mapping for ' + lb_title)
-            except Exception as e:
-                if DEBUG:
-                    print('No TMDB ID found for ' + lb_title)
-                if DEBUG:
-                    print('******' + e.with_traceback)
-
-    f = open(LB_TO_TMDB_CSV, 'a')
-    f.write(temp_str)  # add to list for next time
-    f.close()
+        with open(LETTERBOXD_TO_TMDB_CSV, 'a') as csvfile:
+            csvfile.write(new_mappings)
 
 
-def build_mapping_dict(mapping_csv=LB_TO_TMDB_CSV):
+def load_existing_mapping(mapping_csv=LETTERBOXD_TO_TMDB_CSV):
+    """Load the existing Letterboxd-to-TMDB mappings from the CSV file."""
+    with open(mapping_csv, 'r') as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            letterboxd_to_tmdb_map[row[0]] = row[1]
 
-    for row in csv.reader(open(mapping_csv)):
-        lb_to_tmdb_dict[row[0]] = row[1]
 
-
-def get_plex_video_with_lb_url(lb_url):
-
+def get_plex_video_by_letterboxd_url(lb_url):
+    """Fetch the Plex video object corresponding to a Letterboxd URL."""
     try:
-        tmdb_id = lb_to_tmdb_dict[lb_url]
-        video = guid_lookup_table['tmdb://' + str(tmdb_id)]
-    except KeyboardInterrupt:
-        print('Interrupted')
-        sys.exit(0)
-    except Exception as e:
+        tmdb_id = letterboxd_to_tmdb_map[lb_url]
+        return plex_guid_lookup_table[f"tmdb://{tmdb_id}"]
+    except KeyError as e:
         if DEBUG:
-            print('Failed to find %s. Reason: %s' % (lb_url, e))
+            print(f"Failed to find video for {lb_url}. Reason: {e}")
         return None
 
-    return video
 
-
-def update_plex_ratings(ratings_csv='./ratings'):
+def sync_plex_ratings_from_letterboxd(ratings_csv='./ratings'):
+    """Sync user ratings from Letterboxd to Plex."""
     print('Syncing Plex user ratings from Letterboxd.')
 
-    csvf = open(ratings_csv, 'r')
-    reader = csv.reader(csvf, delimiter=',')
-    next(reader)  # skip header
+    with open(ratings_csv, 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        next(reader)  # Skip the header
 
-    for row in reader:
+        for row in reader:
+            lb_title = row[1]
+            lb_url = row[3]
 
-        lb_title = row[1]
-        lb_link = row[3]
+            video = get_plex_video_by_letterboxd_url(lb_url)
+            if not video:
+                if DEBUG:
+                    print(f"Rating: Failed to find: {lb_title}")
+                continue
 
-        video = get_plex_video_with_lb_url(lb_link)
-        if not video:
-            if DEBUG:
-                print('Rating: Failed to find: ' + lb_title)
-            continue  # skip
+            lb_rating = float(row[4]) * 2  # Convert Letterboxd's X/5 to Plex's X/10 rating system
 
-        lb_rating = float(row[4]) * 2  # convert from X/5 to X/10 rating system
-
-        if video.userRating != lb_rating:
-            video.rate(lb_rating)
-            if True:
-                print('Rated ' + video.title + ' at ' + str(lb_rating) + '/10')
-        else:
-            if DEBUG:
-                print('Skipped rating ' + video.title + '. Already rated.')
+            if video.userRating != lb_rating:
+                video.rate(lb_rating)
+                print(f"Rated {video.title} at {lb_rating}/10")
+            elif DEBUG:
+                print(f"Skipped rating {video.title}. Already rated.")
 
 
-def update_plex_watchlist(user=None, watchlist_csv='./watchlist.csv'):
+def sync_plex_watchlist_from_letterboxd(user, watchlist_csv='./watchlist.csv'):
+    """Sync user watchlist from Letterboxd to Plex."""
     print('Syncing Plex user watchlist from Letterboxd.')
 
-    watchlist = user.watchlist()
+    current_watchlist = user.watchlist()
 
-    csvf = open(watchlist_csv, 'r')
-    reader = csv.reader(csvf, delimiter=',')
-    next(reader)  # skip header
+    with open(watchlist_csv, 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        next(reader)  # Skip the header
 
-    for row in reader:
+        for row in reader:
+            lb_title = row[1]
+            lb_url = row[3]
 
-        lb_title = row[1]
-        lb_link = row[3]
+            video = get_plex_video_by_letterboxd_url(lb_url)
+            if not video:
+                if DEBUG:
+                    print(f"Watchlist: Failed to find in Plex: {lb_title}")
+                continue
 
-        video = get_plex_video_with_lb_url(lb_link)
-        if not video:
-            if DEBUG:
-                print('Watchlist: Failed to find in Plex: ' + lb_title)
-            continue  # skip
-
-        if not any(v.guid == video.guid for v in watchlist):
-            video.addToWatchlist(user)
-            if True:
-                print('Added ' + video.title + ' to watchlist.')
-        else:
-            if DEBUG:
-                print('Already on watchlist:' + video.title)
+            if not any(v.guid == video.guid for v in current_watchlist):
+                video.addToWatchlist(user)
+                print(f"Added {video.title} to watchlist.")
+            elif DEBUG:
+                print(f"Already on watchlist: {video.title}")
 
 
-def update_plex_watched(watched_csv='./watched.csv'):
+def sync_plex_watched_status_from_letterboxd(watched_csv='./watched.csv'):
+    """Sync user watched status from Letterboxd to Plex."""
     print('Syncing Plex user watched data from Letterboxd.')
 
-    csvf = open(watched_csv, 'r')
-    reader = csv.reader(csvf, delimiter=',')
-    next(reader)  # skip header
+    with open(watched_csv, 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        next(reader)  # Skip the header
 
-    for row in reader:
+        for row in reader:
+            lb_title = row[1]
+            lb_url = row[3]
 
-        lb_title = row[1]
-        lb_link = row[3]
+            video = get_plex_video_by_letterboxd_url(lb_url)
+            if not video:
+                if DEBUG:
+                    print(f"Watched: Failed to find: {lb_title}")
+                continue
 
-        video = get_plex_video_with_lb_url(lb_link)
-        if not video:
-            if DEBUG:
-                print('Watched: Failed to find: ' + lb_title)
-            continue  # skip
-
-        if not video.isPlayed:
-            video.markPlayed()
-            if True:
-                print('Marked ' + video.title + ' as played.')
-        else:
-            if DEBUG:
-                print('Skipped marking ' + video.title + ' as played. Already marked.')
-            continue
+            if not video.isPlayed:
+                video.markPlayed()
+                print(f"Marked {video.title} as played.")
+            elif DEBUG:
+                print(f"Skipped marking {video.title} as played. Already marked.")
 
 
-def reset_library(library, reset_rating=True, reset_played=True):
+def reset_plex_library(library, reset_rating=True, reset_played=True):
+    """Reset ratings and watched status for the entire Plex library."""
     print('Resetting library...')
     for video in library.all():
-        print('Resetting ratign and watched status: ' + video.title)
+        print(f'Resetting rating and watched status: {video.title}')
         if reset_rating:
             video.rate(0)
-        if reset_played:
-            if video.isPlayed:
-                video.markUnplayed()
+        if reset_played and video.isPlayed:
+            video.markUnplayed()
 
 
-def reset_watchlist(user):
+def reset_plex_watchlist(user):
+    """Clear the Plex watchlist."""
     for video in user.watchlist():
-        try:
-            video.removeFromWatchlist(user)
-            print(f'Removed {video.title} from watchlist.')
-        except:
-            pass
+        video.removeFromWatchlist(user)
+        print(f'Removed {video.title} from watchlist.')
+
+
 
 
 def main():
-    # lb program functions
-    download = True
-    map = True
+    """Main function to sync Letterboxd data with Plex."""
+    
+    download_letterboxd_data = os.getenv('DOWNLOAD_LETTERBOXD_DATA', 'true') == 'true'
+    map_letterboxd_to_tmdb = os.getenv('MAP_LETTERBOXD_TO_TMDB', 'true') == 'true'
+    #reset_plex_data = os.getenv('RESET_PLEX_DATA', 'false') == 'true'
 
-    # plex program functions
-    reset = False
+    sync_watchlist = os.getenv('SYNC_WATCHLIST', 'true') == 'true'
+    sync_watched = os.getenv('SYNC_WATCHED', 'true') == 'true'
+    sync_ratings = os.getenv('SYNC_RATINGS', 'true') == 'true'
 
-    sync_watchlist = True
-    sync_watched = True
-    sync_ratings = True
+    print('Starting Sync from Letterboxd to Plex')
 
-    sync_all = True
+    # Load Plex and MyPlex account details from environment variables
+    plex_base_url = os.getenv('PLEX_BASEURL')
+    plex_token = os.getenv('PLEX_TOKEN')
 
-    # TESTING FLAGS - COMMENT ALL OUT
-    #########################################
+    if not plex_base_url or not plex_token:
+        print("Plex base URL and token are required. Please set them in environment variables.")
+        return
 
-    # download = False
-    # map = False
-    # reset = True
-    # sync_watchlist=False
-    # sync_watched=False
-    # sync_ratings=False
-    # sync_all = False
+    plex = PlexServer(plex_base_url, plex_token)
+    account = MyPlexAccount(token=plex_token)
 
-    ##################################################
-
-    if sync_all:
-        sync_watchlist = True
-        sync_watched = True
-        sync_ratings = True
-
-    if download:
-        map = True  # no reason to not map if I'm downloading
-
-    print('Starting Sync from Letterboxd to Plex ')
-
-    # hijack stuff from lb-stats config
-    lb_folder = lbs_config['root_folder'] + '/static'
-    baseurl = lbs_config['Plex']['baseurl']
-    token = lbs_config['Plex']['token']
-
-    plex = PlexServer(baseurl, token)
-    account = MyPlexAccount(token=token)
-
-    # get optional environment variable
-    #plex_user_name = os.getenv('PLEX_USER')
-    try:
-        plex_user_name = lbs_config['Plex']['user']
-    except KeyError:
-        plex_user_name = None
-
-
-    if plex_user_name is not None:
-
-        try:
-            plex_user_pin = lbs_config['Plex']['pin']  # default None value is OK if no pin is set
-        except KeyError:
-            plex_user_pin = None
+    plex_user_name = os.getenv('PLEX_USER')
+    if plex_user_name:
+        plex_user_pin = os.getenv('PLEX_PIN')
         user = account.switchHomeUser(user=plex_user_name, pin=plex_user_pin)
-        user_server = plex.switchUser(plex_user_name)
+        plex = plex.switchUser(plex_user_name)
     else:
+        user = account  # Use admin account by default
 
-        user = account  # use admin (default) account
-        user_server = plex
+    print(f'Using Plex user and library: {user.title}')
 
-    print('Using Plex user and library: ' + str(user.title))
+    movies_library = plex.library.section('Movies')
 
-    movies_library = user_server.library.section('Movies')
-
+    # Build Plex GUID lookup table for fast access
     print('-Building GUID lookup table...')
     for item in movies_library.all():
-        guid_lookup_table[item.guid] = item
-        guid_lookup_table.update({guid.id: item for guid in item.guids})
+        plex_guid_lookup_table[item.guid] = item
+        plex_guid_lookup_table.update({guid.id: item for guid in item.guids})
 
-    if download:
+    if download_letterboxd_data:
         print('Downloading Letterboxd user data...')
-
         downloader = ws.Downloader()
         downloader.login()
         downloader.download_stats()
 
-        print('---')
-
-    if map:
+    if map_letterboxd_to_tmdb:
         print('Mapping Letterboxd links to TMDB ID...')
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'))
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'))
 
-        build_lb_tmdb_mapping_file(lb_folder + '/ratings.csv')
-        build_lb_tmdb_mapping_file(lb_folder + '/watchlist.csv')
-        build_lb_tmdb_mapping_file(lb_folder + '/watched.csv')
+    #if reset_plex_data:
+    #    reset_plex_watchlist(account)
+    #    reset_plex_library(movies_library)
 
-    if reset:
-        reset_watchlist(account)
-        reset_library(movies_library)
-
-    build_mapping_dict()
+    load_existing_mapping()
 
     if sync_watchlist:
-        update_plex_watchlist(user, lb_folder + '/watchlist.csv')
+        sync_plex_watchlist_from_letterboxd(user, os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
     if sync_watched:
-        update_plex_watched(lb_folder + '/watched.csv')
+        sync_plex_watched_status_from_letterboxd(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'))
     if sync_ratings:
-        update_plex_ratings(lb_folder + '/ratings.csv')
+        sync_plex_ratings_from_letterboxd(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'))
 
-    print('Process complete.')
+    print('Sync process complete.')
+
 
 
 if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print('Interrupted')
+        print('Process interrupted.')
         sys.exit(0)

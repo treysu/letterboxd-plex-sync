@@ -1,3 +1,0 @@
-0 */6 * * * cd /app && /usr/local/bin/python /app/sync_lb_to_plex.py >> /app/output.txt 2>>/app/error.txt
-#*/10 * * * * cd /app && /usr/local/bin/python /app/sync_lb_to_plex.py >> /app/output.txt 2>>/app/error.txt
-#Empty Line

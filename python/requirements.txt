@@ -1,3 +1,4 @@
 letterboxd_stats==0.1.3
 PlexAPI==4.13.4
 numpy==1.26.4
+toml
