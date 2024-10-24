@@ -7,7 +7,7 @@ python /app/generate_config.py
 if [ "$RUN_NOW" == "true" ]; then
   echo "RUN_NOW is set to true. Running job immediately..."
   # Run your Python script manually (the cron job) before starting cron
-  /app/sync_job_wrapper.sh
+  python /app/sync_lb_to_plex.py
 else
   echo "RUN_NOW is not set. Proceeding with regular cron schedule."
 fi
