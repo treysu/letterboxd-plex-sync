@@ -18,9 +18,9 @@ COPY ./python/requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Add crontab file and set permissions
-COPY cron/crontab /etc/cron.d/crontab
-RUN chmod 0644 /etc/cron.d/crontab && crontab /etc/cron.d/crontab
+# Copy cron placeholder
+COPY cron/crontab_template /etc/cron.d/crontab_template
+RUN chmod 0644 /etc/cron.d/crontab_template
 
 # Configure cron to log to /var/log/cron.log
 #RUN touch /var/log/cron.log && \
