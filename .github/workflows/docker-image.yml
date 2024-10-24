@@ -3,7 +3,8 @@ name: Build and Push Docker Image
 on:
   push:
     branches:
-      - main  # You can specify other branches as needed
+      - main
+      - dev
 
 jobs:
   build:
@@ -25,15 +26,27 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
-      # Build and push the Docker image
+      # Determine Docker tags based on the branch
+      - name: Set Docker Image Tag
+        id: vars
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "TAG=latest" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo "TAG=dev" >> $GITHUB_ENV
+          else
+            echo "TAG=${{ github.sha }}" >> $GITHUB_ENV
+          fi
+
+      # Build and push the Docker image with appropriate tag
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:latest  # Replace with your Docker Hub repo
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ env.TAG }}
 
-      # Optionally tag the image with the Git commit SHA or a version
+      # Optionally, add a unique Git commit SHA tag
       - name: Push with Git SHA Tag
         uses: docker/build-push-action@v5
         with:
