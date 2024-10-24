@@ -1,7 +1,7 @@
-# Use a slim Python base image
+# Use a slim Python base image to reduce size
 FROM python:3.10-slim
 
-# Install dependencies without bulk
+# Install dependencies in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cron vim && \
     rm -rf /var/lib/apt/lists/*
@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set working directory
 WORKDIR /app
 
-# Copy application files 
+# Copy application files
 COPY ./python/sync_lb_to_plex.py .
 COPY ./python/timing.py .
 COPY ./python/requirements.txt .
@@ -24,5 +24,11 @@ RUN touch output.txt error.txt
 COPY cron/crontab /etc/cron.d/crontab
 RUN chmod 0644 /etc/cron.d/crontab && crontab /etc/cron.d/crontab
 
-# Set the entrypoint to run cron and keep the container alive
+# Add an entrypoint script to check RUN_NOW and run the job if needed
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Use the entrypoint script to handle RUN_NOW logic
+ENTRYPOINT ["/entrypoint.sh"]
+
 CMD ["cron", "-f"]
