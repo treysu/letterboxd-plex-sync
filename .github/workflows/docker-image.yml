@@ -41,14 +41,6 @@ jobs:
             echo "TAG=${{ github.sha }}" >> $GITHUB_ENV
           fi
 
-      # Build and push the Docker image with appropriate tag
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ env.TAG }}
-
       # Optionally, add a unique Git commit SHA tag
       - name: Push with Git SHA Tag
         uses: docker/build-push-action@v5
@@ -56,3 +48,11 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ github.sha }}
+
+      # Build and push the Docker image with appropriate tag
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ env.TAG }}
