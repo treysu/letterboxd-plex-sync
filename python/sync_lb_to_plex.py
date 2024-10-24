@@ -26,32 +26,6 @@ open(LETTERBOXD_TO_TMDB_CSV, 'a').close()
 # Set DEBUG mode based on the environment variable
 DEBUG = os.getenv('DEBUG', 'False') != 'False'
 
-def generate_config_toml():
-    """Generate the config.toml file using environment variables."""
-    config_content = f"""
-# Where you want the .csv file of your Letterboxd activity to be saved.
-root_folder = "{os.getenv('LB_ROOT_FOLDER', '/tmp/')}"
-
-# The size of the ASCII art poster printed in your terminal when you check the details of a movie. Set to 0 to disable.
-poster_columns = 0
-
-[TMDB]
-api_key = "{os.getenv('TMDB_API_KEY', '')}"
-
-[Letterboxd]
-username = "{os.getenv('LB_USERNAME', '')}"
-password = "{os.getenv('LB_PASSWORD', '')}"
-
-"""
-
-    config_path = os.path.expanduser("~/.config/letterboxd_stats/config.toml")
-    os.makedirs(os.path.dirname(config_path), exist_ok=True)
-
-    with open(config_path, 'w') as config_file:
-        config_file.write(config_content.strip())
-
-    print(f"Generated config.toml at {config_path}")
-
 def populate_letterboxd_tmdb_mapping_file(csv_path):
     """Build the Letterboxd to TMDB mapping file if necessary."""
     load_existing_mapping()
@@ -203,7 +177,6 @@ from plexapi.myplex import MyPlexAccount
 
 def main():
     """Main function to sync Letterboxd data with Plex."""
-    generate_config_toml()
     
     download_letterboxd_data = os.getenv('DOWNLOAD_LETTERBOXD_DATA', 'True') == 'True'
     map_letterboxd_to_tmdb = os.getenv('MAP_LETTERBOXD_TO_TMDB', 'True') == 'True'
