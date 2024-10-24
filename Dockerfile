@@ -1,7 +1,7 @@
-# Use a slim Python base image to reduce size
+# Use a slim Python base image
 FROM python:3.10-slim
 
-# Install dependencies
+# Install dependencies without bulk
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cron vim && \
     rm -rf /var/lib/apt/lists/*
