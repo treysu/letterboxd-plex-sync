@@ -3,12 +3,11 @@
 import os
 import sys
 import csv
+import timing
 from plexapi.server import PlexServer
 from plexapi.myplex import MyPlexAccount
-
 from letterboxd_stats import web_scraper as ws
 
-import timing
 
 # Change the current working directory to the location of this script
 current_script_path = os.path.abspath(__file__)
@@ -171,9 +170,7 @@ def reset_plex_watchlist(user):
         print(f'Removed {video.title} from watchlist.')
 
 
-import os
-from plexapi.server import PlexServer
-from plexapi.myplex import MyPlexAccount
+
 
 def main():
     """Main function to sync Letterboxd data with Plex."""
