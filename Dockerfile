@@ -32,5 +32,3 @@ RUN chmod +x /entrypoint.sh
 
 # Use the entrypoint script to handle RUN_NOW logic
 ENTRYPOINT ["/entrypoint.sh"]
-
-CMD ["cron", "-f"]

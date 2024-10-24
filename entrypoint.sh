@@ -12,5 +12,9 @@ else
   echo "RUN_NOW is not set. Proceeding with regular cron schedule."
 fi
 
-# Start cron as usual
-exec "$@"
+# Start cron explicitly regardless of RUN_NOW
+echo "Starting cron..."
+cron
+
+# Keep the container running by tailing the logs
+tail -f /var/log/cron.log
