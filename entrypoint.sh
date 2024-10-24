@@ -16,4 +16,5 @@ fi
 echo "Starting cron..."
 cron
 
+touch /app/combined_log.txt
 tail -f /app/combined_log.txt
