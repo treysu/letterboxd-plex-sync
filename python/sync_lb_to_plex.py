@@ -124,10 +124,9 @@ def sync_plex_watchlist_from_letterboxd(user, watchlist_csv='./watchlist.csv'):
             if not any(v.guid == video.guid for v in current_watchlist):
                 try:
                     video.addToWatchlist(user)
+                    print(f"Added {video.title} to watchlist.")
                 except BadRequest:
                     print(f"An error occured when adding {video.title} to watchlist.") 
-                
-                print(f"Added {video.title} to watchlist.")
             elif DEBUG:
                 print(f"Already on watchlist: {video.title}")
 
