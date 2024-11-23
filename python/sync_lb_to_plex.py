@@ -4,6 +4,7 @@ import os
 import sys
 import csv
 import timing
+from plexapi.exceptions import BadRequest
 from plexapi.server import PlexServer
 from plexapi.myplex import MyPlexAccount
 from letterboxd_stats import web_scraper as ws
@@ -121,7 +122,11 @@ def sync_plex_watchlist_from_letterboxd(user, watchlist_csv='./watchlist.csv'):
                 continue
 
             if not any(v.guid == video.guid for v in current_watchlist):
-                video.addToWatchlist(user)
+                try:
+                    video.addToWatchlist(user)
+                except BadRequest:
+                    print(f"An error occured when adding {video.title} to watchlist.") 
+                
                 print(f"Added {video.title} to watchlist.")
             elif DEBUG:
                 print(f"Already on watchlist: {video.title}")
