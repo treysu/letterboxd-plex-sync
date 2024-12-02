@@ -1,2 +1,3 @@
+#Empty Line
 ${CRON_SCHEDULE} /app/sync_job_wrapper.sh
 #Empty Line
