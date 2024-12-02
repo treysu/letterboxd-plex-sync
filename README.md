@@ -1,6 +1,6 @@
 # 🎭 Letterboxd Plex Sync
 
-A tool that syncs [Letterboxd](https://letterboxd.com/) user data (ratings, watch history, and watchlists) to a personal [Plex](https://www.plex.tv/) server. This tool aims to enhance your Plex experience by keeping your viewing stats up to date with your Letterboxd profile! 🚀
+A tool that syncs [Letterboxd](https://letterboxd.com/) user data (ratings, watch history, and watchlists) to a personal [Plex](https://www.plex.tv/) server. THIS IS A ONE WAY SYNC. This tool aims to enhance your Plex experience by keeping your viewing stats up to date with your Letterboxd profile! 🚀
 
 ## 🔧 How It Works
 
@@ -86,22 +86,16 @@ Here's a sample Docker Compose setup to run the `letterboxd_plex_sync` script as
 name: letterboxd-plex-sync
 services:
   letterboxd-plex-sync:
-    <<: [*general, *plexdependant]
     container_name: letterboxd-plex-sync
     image: treysu/letterboxd-plex-sync:latest
     restart: unless-stopped
-    environment:
-      PUID: 1002
-      PGID: 1002
     env_file:
       - path: letterboxd.env
         required: true
-      - path: default.env
-        required: true
 
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /mnt/disk3/DockerData/lb_sync/resources:/app/resources:rw # optionally add in a resources folder to add a pre-generated lb to tmdb mapping CSV file.
+      - /etc/localtime:/etc/localtime:ro # optional: for accurate log times
+      - /mnt/disk3/DockerData/lb_sync/resources:/app/resources:rw # optional: add folder to avoid regenerating lb to tmdb mapping CSV file
 ```
 
 To use Docker Compose:
