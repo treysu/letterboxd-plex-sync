@@ -95,7 +95,7 @@ services:
 
     volumes:
       - /etc/localtime:/etc/localtime:ro # optional: for accurate log times
-      - /mnt/disk3/DockerData/lb_sync/resources:/app/resources:rw # optional: add folder to avoid regenerating lb to tmdb mapping CSV file
+      - path/to/resources:/app/resources:rw # optional: add folder to avoid regenerating lb to tmdb mapping CSV file
 ```
 
 To use Docker Compose:
@@ -110,11 +110,8 @@ Alternatively, you can run the container directly with Docker:
 
 ```sh
 docker run -d \
-  --name letterboxd-plex-sync \
   --env-file letterboxd.env \
-  --env-file default.env \
-  -v /etc/localtime:/etc/localtime:ro \
-  -v /mnt/disk3/DockerData/lb_sync/resources:/app/resources:rw \
+  -v path/to/resources:/app/resources:rw \
   treysu/letterboxd-plex-sync:dev
 ```
 
