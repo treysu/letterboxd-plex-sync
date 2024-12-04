@@ -7,7 +7,7 @@ import timing
 from plexapi.exceptions import BadRequest
 from plexapi.server import PlexServer
 from plexapi.myplex import MyPlexAccount
-from letterboxd_stats import web_scraper as ws
+from letterboxd_stats import download_data as lb_download_data
 
 
 # Change the current working directory to the location of this script
@@ -220,9 +220,7 @@ def main():
 
     if download_letterboxd_data:
         print('Downloading Letterboxd user data...')
-        downloader = ws.Downloader()
-        downloader.login()
-        downloader.download_stats()
+        lb_download_data()
 
     if map_letterboxd_to_tmdb:
         print('Mapping Letterboxd links to TMDB ID...')
