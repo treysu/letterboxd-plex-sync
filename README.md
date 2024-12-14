@@ -25,15 +25,22 @@ The script relies on several environment variables for configuration. Here is a 
 - **`TMDB_API_KEY`**: Your TMDB API key, required for fetching additional metadata.
 
 ### Optional Environment Variables
+- **`DEBUG`**: Set to `true` to enable debug logging. Defaults to `false`.
+- **`RUN_NOW`**: Set to `true` to run the sync job immediately when the container starts. Defaults to `false`.
+  
 - **`PLEX_USER`**: The Plex user to use for syncing, if not the default admin.
 - **`PLEX_PIN`**: The PIN associated with the Plex user, if required.
 - **`CRON_SCHEDULE`**: The schedule for the cron job (e.g., `0 4 */1 * *` for every day at 4:00AM). Defaults to `0 4 */1 * *`.
-- **`RUN_NOW`**: Set to `true` to run the sync job immediately when the container starts. Defaults to `false`.
+
+- **`RADARR_URL`**: The base URL of your Radarr server (e.g., `http://your-radarr-server:7878`). Required if syncing watchlist to Radarr.
+- **`RADARR_TOKEN`**: The API key for your Radarr server. Required if syncing watchlist to Radarr.
+
 - **`DOWNLOAD_LETTERBOXD_DATA`**: Set to `true` to download Letterboxd data. Defaults to `true`.
 - **`MAP_LETTERBOXD_TO_TMDB`**: Set to `true` to map Letterboxd URLs to TMDB IDs. Defaults to `true`.
 - **`SYNC_WATCHLIST`**: Set to `true` to sync the watchlist from Letterboxd to Plex. Defaults to `true`.
 - **`SYNC_WATCHED`**: Set to `true` to sync watched status from Letterboxd to Plex. Defaults to `true`.
 - **`SYNC_RATINGS`**: Set to `true` to sync user ratings from Letterboxd to Plex. Defaults to `true`.
+- **`SYNC_WATCHLIST_TO_RADARR`**: Set to `true` to sync the Letterboxd watchlist to Radarr. Defaults to `false`.
 
 
 ### Example `letterboxd.env`
@@ -62,16 +69,22 @@ LB_PASSWORD="your_letterboxd_password"
 # TMDB API key (required for TMDB lookups)
 TMDB_API_KEY="your_tmdb_api_key_here"
 
+# Radarr configuration (required if syncing to Radarr)
+RADARR_URL="http://your-radarr-server:7878"  # (required if syncing to Radarr)
+RADARR_TOKEN="your_radarr_api_key_here"      # (required if syncing to Radarr)
+
 # Flags to control script behavior
 DOWNLOAD_LETTERBOXD_DATA="true"   # Set to "true" to download Letterboxd data (default: true)
 MAP_LETTERBOXD_TO_TMDB="true"     # Set to "true" to map Letterboxd URLs to TMDB IDs (default: true)
 
-# Sync options (set to "true" or "false" to enable/disable; default: true)
-SYNC_WATCHLIST="true"
-SYNC_WATCHED="true"
-SYNC_RATINGS="true"
-```
+# Sync options (set to "true" or "false" to enable/disable)
+SYNC_WATCHLIST="true"               # default: true
+SYNC_WATCHED="true"                 # default: true
+SYNC_RATINGS="true"                 # default: true
+SYNC_WATCHLIST_TO_RADARR="false"    # default: false
 
+
+```
 
 ## 🛠️ Running the Script
 
@@ -79,7 +92,7 @@ There are multiple ways to run the `letterboxd_plex_sync` script:
 
 ### 1. Docker Compose
 
-Here's a sample Docker Compose setup to run the `letterboxd_plex_sync` script as a cron job:
+Here's a sample Docker Compose setup to run the `letterboxd_plex_sync` script on a schedule:
 
 ```yaml
 ---
@@ -92,10 +105,9 @@ services:
     env_file:
       - path: letterboxd.env
         required: true
-
     volumes:
       - /etc/localtime:/etc/localtime:ro # optional: for accurate log times
-      - path/to/resources:/app/resources:rw # optional: add folder to avoid regenerating lb to tmdb mapping CSV file
+      - path/to/resources:/app/data:rw # technically optional: add folder to avoid regenerating lb to tmdb mapping CSV file
 ```
 
 To use Docker Compose:
@@ -112,7 +124,7 @@ Alternatively, you can run the container directly with Docker:
 docker run -d \
   --env-file letterboxd.env \
   -v path/to/resources:/app/resources:rw \
-  treysu/letterboxd-plex-sync:dev
+  treysu/letterboxd-plex-sync:latest
 ```
 
 ### 3. Running Locally
