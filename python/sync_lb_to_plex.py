@@ -17,20 +17,15 @@ current_script_path = os.path.abspath(__file__)
 current_script_dir = os.path.dirname(current_script_path)
 os.chdir(current_script_dir)
 
-# Path to the CSV that maps Letterboxd URLs to TMDB IDs
-LETTERBOXD_TO_TMDB_CSV = './lb_URL_to_tmdb_id.csv'
 letterboxd_to_tmdb_map = {}
 plex_guid_lookup_table = {}
-
-# Ensure the Letterboxd-to-TMDB CSV file exists
-open(LETTERBOXD_TO_TMDB_CSV, 'a', encoding='utf-8').close()
 
 # Set DEBUG mode based on the environment variable
 DEBUG = os.getenv('DEBUG', 'false') != 'false'
 
-def populate_letterboxd_tmdb_mapping_file(csv_path):
+def populate_letterboxd_tmdb_mapping_file(csv_path, letterboxd_to_tmdb_mapping_csv):
     """Build the Letterboxd to TMDB mapping file if necessary."""
-    load_existing_mapping()
+    load_existing_mapping(letterboxd_to_tmdb_mapping_csv)
 
     with open(csv_path, 'r', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
@@ -53,11 +48,11 @@ def populate_letterboxd_tmdb_mapping_file(csv_path):
                 if DEBUG:
                     print(f"Added mapping for {lb_title}")
 
-        with open(LETTERBOXD_TO_TMDB_CSV, 'a', encoding='utf-8') as csvfile:
+        with open(letterboxd_to_tmdb_mapping_csv, 'a', encoding='utf-8') as csvfile:
             csvfile.write(new_mappings)
 
 
-def load_existing_mapping(mapping_csv=LETTERBOXD_TO_TMDB_CSV):
+def load_existing_mapping(mapping_csv):
     """Load the existing Letterboxd-to-TMDB mappings from the CSV file."""
     with open(mapping_csv, 'r', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile)
@@ -259,6 +254,7 @@ def get_radarr_movies(radarr_url, radarr_token):
 def main():
     """Main function to sync Letterboxd data with Plex."""
     
+    letterboxd_to_tmdb_csv = os.getenv('LB_TMDB_MAP_CSV_PATH_OVERRIDE', '/app/resources/lb_URL_to_tmdb_id.csv')
     download_letterboxd_data = os.getenv('DOWNLOAD_LETTERBOXD_DATA', 'true') == 'true'
     map_letterboxd_to_tmdb = os.getenv('MAP_LETTERBOXD_TO_TMDB', 'true') == 'true'
     sync_watchlist_enabled = os.getenv('SYNC_WATCHLIST', 'true') == 'true'
@@ -267,6 +263,9 @@ def main():
     sync_watchlist_to_radarr_enabled = os.getenv('SYNC_WATCHLIST_TO_RADARR', 'false') == 'true'
 
     print('Starting Sync from Letterboxd to Plex')
+
+    # Ensure the Letterboxd-to-TMDB CSV file exists
+    open(letterboxd_to_tmdb_csv, 'a', encoding='utf-8').close()
 
     # Load Plex and MyPlex account details from environment variables
     plex_base_url = os.getenv('PLEX_BASEURL')
@@ -305,15 +304,15 @@ def main():
 
     if map_letterboxd_to_tmdb:
         print('Mapping Letterboxd links to TMDB ID...')
-        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'))
-        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
-        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'))
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'), letterboxd_to_tmdb_csv)
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'), letterboxd_to_tmdb_csv)
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'), letterboxd_to_tmdb_csv)
 
     #if reset_plex_data:
     #    reset_plex_watchlist(account)
     #    reset_plex_library(movies_library)
 
-    load_existing_mapping()
+    load_existing_mapping(letterboxd_to_tmdb_csv)
 
     if sync_watchlist_enabled:
         sync_plex_watchlist_from_letterboxd(user, os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
