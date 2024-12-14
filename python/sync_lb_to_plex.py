@@ -254,7 +254,7 @@ def get_radarr_movies(radarr_url, radarr_token):
 def main():
     """Main function to sync Letterboxd data with Plex."""
     
-    letterboxd_to_tmdb_csv = os.getenv('LB_TMDB_MAP_CSV_PATH_OVERRIDE', '/app/resources/lb_URL_to_tmdb_id.csv')
+    letterboxd_to_tmdb_csv = os.getenv('LB_TMDB_MAP_CSV_PATH_OVERRIDE', '/app/data/lb_URL_to_tmdb_id.csv')
     download_letterboxd_data = os.getenv('DOWNLOAD_LETTERBOXD_DATA', 'true') == 'true'
     map_letterboxd_to_tmdb = os.getenv('MAP_LETTERBOXD_TO_TMDB', 'true') == 'true'
     sync_watchlist_enabled = os.getenv('SYNC_WATCHLIST', 'true') == 'true'
