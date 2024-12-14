@@ -46,21 +46,21 @@ The script relies on several environment variables for configuration. Here is a 
 ### Example `letterboxd.env`
 ```env
 # Schedule for the cron job (default: every day at 4:00AM)
-CRON_SCHEDULE="0 4 */1 * *"
+#CRON_SCHEDULE="0 4 */1 * *"
 
 # Immediately run the sync job on container startup (default: false)
-RUN_NOW="false"
+#RUN_NOW="false"
 
 # Debug mode (default: false)
-DEBUG="false"
+#DEBUG="false"
 
 # Plex server configuration (required)
 PLEX_BASEURL="http://your-plex-server:32400"
 PLEX_TOKEN="your_plex_token_here"
 
 # Plex user details (optional)
-PLEX_USER="your_plex_username"    # Optional: switch to a specific Plex user
-PLEX_PIN="your_plex_pin_here"     # Optional: required if switching Plex user
+#PLEX_USER="your_plex_username"    # Optional: switch to a specific Plex user
+#PLEX_PIN="your_plex_pin_here"     # Optional: required if switching Plex user
 
 # Letterboxd credentials (required for downloading data)
 LB_USERNAME="your_letterboxd_username"
@@ -74,14 +74,14 @@ RADARR_URL="http://your-radarr-server:7878"  # (required if syncing to Radarr)
 RADARR_TOKEN="your_radarr_api_key_here"      # (required if syncing to Radarr)
 
 # Flags to control script behavior
-DOWNLOAD_LETTERBOXD_DATA="true"   # Set to "true" to download Letterboxd data (default: true)
-MAP_LETTERBOXD_TO_TMDB="true"     # Set to "true" to map Letterboxd URLs to TMDB IDs (default: true)
+#DOWNLOAD_LETTERBOXD_DATA="true"   # Set to "true" to download Letterboxd data (default: true)
+#MAP_LETTERBOXD_TO_TMDB="true"     # Set to "true" to map Letterboxd URLs to TMDB IDs (default: true)
 
 # Sync options (set to "true" or "false" to enable/disable)
-SYNC_WATCHLIST="true"               # default: true
-SYNC_WATCHED="true"                 # default: true
-SYNC_RATINGS="true"                 # default: true
-SYNC_WATCHLIST_TO_RADARR="false"    # default: false
+#SYNC_WATCHLIST="true"               # default: true
+#SYNC_WATCHED="true"                 # default: true
+#SYNC_RATINGS="true"                 # default: true
+SYNC_WATCHLIST_TO_RADARR="true"      # default: false
 
 
 ```
