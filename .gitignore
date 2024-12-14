@@ -1,4 +1,4 @@
-python/letterboxed_link_to_tmdb_mapping.csv
+python/lb_URL_to_tmdb_id.csv
 python/.venv
 python/.venv/*
 python/__pycache__
@@ -7,3 +7,4 @@ python/__pycache__/*
 */.env
 .venv
 .env
+letterboxd.env

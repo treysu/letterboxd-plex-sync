@@ -3,7 +3,9 @@
 import os
 import sys
 import csv
+import json
 import timing
+import requests
 from plexapi.exceptions import BadRequest
 from plexapi.server import PlexServer
 from plexapi.myplex import MyPlexAccount
@@ -16,12 +18,12 @@ current_script_dir = os.path.dirname(current_script_path)
 os.chdir(current_script_dir)
 
 # Path to the CSV that maps Letterboxd URLs to TMDB IDs
-LETTERBOXD_TO_TMDB_CSV = '/app/data/lb_URL_to_tmdb_id.csv'
+LETTERBOXD_TO_TMDB_CSV = './lb_URL_to_tmdb_id.csv'
 letterboxd_to_tmdb_map = {}
 plex_guid_lookup_table = {}
 
 # Ensure the Letterboxd-to-TMDB CSV file exists
-open(LETTERBOXD_TO_TMDB_CSV, 'a').close()
+open(LETTERBOXD_TO_TMDB_CSV, 'a', encoding='utf-8').close()
 
 # Set DEBUG mode based on the environment variable
 DEBUG = os.getenv('DEBUG', 'false') != 'false'
@@ -30,7 +32,7 @@ def populate_letterboxd_tmdb_mapping_file(csv_path):
     """Build the Letterboxd to TMDB mapping file if necessary."""
     load_existing_mapping()
 
-    with open(csv_path, 'r') as csvfile:
+    with open(csv_path, 'r', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         next(reader)  # Skip the header
 
@@ -51,13 +53,13 @@ def populate_letterboxd_tmdb_mapping_file(csv_path):
                 if DEBUG:
                     print(f"Added mapping for {lb_title}")
 
-        with open(LETTERBOXD_TO_TMDB_CSV, 'a') as csvfile:
+        with open(LETTERBOXD_TO_TMDB_CSV, 'a', encoding='utf-8') as csvfile:
             csvfile.write(new_mappings)
 
 
 def load_existing_mapping(mapping_csv=LETTERBOXD_TO_TMDB_CSV):
     """Load the existing Letterboxd-to-TMDB mappings from the CSV file."""
-    with open(mapping_csv, 'r') as csvfile:
+    with open(mapping_csv, 'r', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
             letterboxd_to_tmdb_map[row[0]] = row[1]
@@ -78,7 +80,7 @@ def sync_plex_ratings_from_letterboxd(ratings_csv='./ratings'):
     """Sync user ratings from Letterboxd to Plex."""
     print('Syncing Plex user ratings from Letterboxd.')
 
-    with open(ratings_csv, 'r') as csvfile:
+    with open(ratings_csv, 'r', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         next(reader)  # Skip the header
 
@@ -107,7 +109,7 @@ def sync_plex_watchlist_from_letterboxd(user, watchlist_csv='./watchlist.csv'):
 
     current_watchlist = user.watchlist()
 
-    with open(watchlist_csv, 'r') as csvfile:
+    with open(watchlist_csv, 'r', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         next(reader)  # Skip the header
 
@@ -135,7 +137,7 @@ def sync_plex_watched_status_from_letterboxd(watched_csv='./watched.csv'):
     """Sync user watched status from Letterboxd to Plex."""
     print('Syncing Plex user watched data from Letterboxd.')
 
-    with open(watched_csv, 'r') as csvfile:
+    with open(watched_csv, 'r', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         next(reader)  # Skip the header
 
@@ -156,23 +158,101 @@ def sync_plex_watched_status_from_letterboxd(watched_csv='./watched.csv'):
                 print(f"Skipped marking {video.title} as played. Already marked.")
 
 
-def reset_plex_library(library, reset_rating=True, reset_played=True):
-    """Reset ratings and watched status for the entire Plex library."""
-    print('Resetting library...')
-    for video in library.all():
-        print(f'Resetting rating and watched status: {video.title}')
-        if reset_rating:
-            video.rate(0)
-        if reset_played and video.isPlayed:
-            video.markUnplayed()
+def add_to_radarr(tmdb_id, radarr_url, radarr_token):
+    """Add a movie to Radarr using its TMDB ID."""
+    headers = {
+        "X-Api-Key": radarr_token,
+        "Content-Type": "application/json"
+    }
+
+    # Radarr API endpoint for adding movies
+    endpoint = f"{radarr_url.rstrip('/')}/api/v3/movie"
+
+    # Movie data payload
+    payload = {
+        "tmdbId": tmdb_id,
+        "qualityProfileId": 1,  # Adjust based on your Radarr setup
+        "rootFolderPath": "/movies",  # Adjust your root folder path
+        "monitored": True,
+        "addOptions": {
+            "searchForMovie": True
+        }
+    }
+
+    try:
+        response = requests.post(endpoint, json=payload, headers=headers)
+        response.raise_for_status()
+        print(f"Successfully added movie with TMDB ID {tmdb_id} to Radarr.")
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 400:
+            # Decode the response content
+            try:
+                error_details = json.loads(response.content.decode('utf-8'))
+                for error in error_details:
+                    error_code = error.get("errorCode")
+                    error_message = error.get("errorMessage")
+
+                    # Handle specific error cases
+                    if error_code == "MovieExistsValidator":
+                        print(f"Movie with TMDB ID {tmdb_id} is already in Radarr.")
+                    elif "not found" in error_message:
+                        print(f"Invalid TMDB ID {tmdb_id}: {error_message}")
+                    elif error_code == "MoviePathValidator":
+                        print(f"Path conflict for TMDB ID {tmdb_id}: {error_message}")
+                    else:
+                        print(f"Unhandled Radarr error for TMDB ID {tmdb_id}: {error_message}")
+            except json.JSONDecodeError:
+                print(f"Failed to parse error response for TMDB ID {tmdb_id}. Response content: {response.content}")
+        else:
+            # Log other HTTP errors
+            print(f"Failed to add movie with TMDB ID {tmdb_id} to Radarr: {e}")
+            print(f"Response status code: {response.status_code}")
+            print(f"Response content: {response.content}")
+            print(f"Payload: {payload}")
+
+def sync_watchlist_to_radarr(watchlist_csv, radarr_url, radarr_token):
+    """Sync the Letterboxd watchlist to Radarr."""
+    print("Syncing Letterboxd watchlist to Radarr.")
+
+    existing_tmdb_ids = get_radarr_movies(radarr_url, radarr_token)
+
+    with open(watchlist_csv, 'r', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        next(reader)  # Skip the header
+
+        for row in reader:
+            lb_title = row[1]
+            lb_url = row[3]
+
+            # Fetch TMDB ID for the movie
+            tmdb_id = letterboxd_to_tmdb_map.get(lb_url)
+            if not tmdb_id:
+                if DEBUG:
+                    print(f"Radarr Sync: Failed to find TMDB ID for {lb_title}")
+                continue
+
+            if int(tmdb_id) in existing_tmdb_ids:
+                if DEBUG:
+                    print(f"Skipping {lb_title}. Already in Radarr.")
+                continue
+
+            # Add to Radarr
+            add_to_radarr(tmdb_id, radarr_url, radarr_token)
 
 
-def reset_plex_watchlist(user):
-    """Clear the Plex watchlist."""
-    for video in user.watchlist():
-        video.removeFromWatchlist(user)
-        print(f'Removed {video.title} from watchlist.')
-
+def get_radarr_movies(radarr_url, radarr_token):
+    """Fetch the list of movies currently in Radarr."""
+    headers = {"X-Api-Key": radarr_token}
+    endpoint = f"{radarr_url.rstrip('/')}/api/v3/movie"
+    
+    try:
+        response = requests.get(endpoint, headers=headers)
+        response.raise_for_status()
+        movies = response.json()
+        return {movie['tmdbId'] for movie in movies}  # Return a set of TMDB IDs
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to fetch movies from Radarr: {e}")
+        return set()  # Return an empty set on failure
 
 
 
@@ -181,11 +261,10 @@ def main():
     
     download_letterboxd_data = os.getenv('DOWNLOAD_LETTERBOXD_DATA', 'true') == 'true'
     map_letterboxd_to_tmdb = os.getenv('MAP_LETTERBOXD_TO_TMDB', 'true') == 'true'
-    #reset_plex_data = os.getenv('RESET_PLEX_DATA', 'false') == 'true'
-
-    sync_watchlist = os.getenv('SYNC_WATCHLIST', 'true') == 'true'
-    sync_watched = os.getenv('SYNC_WATCHED', 'true') == 'true'
-    sync_ratings = os.getenv('SYNC_RATINGS', 'true') == 'true'
+    sync_watchlist_enabled = os.getenv('SYNC_WATCHLIST', 'true') == 'true'
+    sync_watched_enabled = os.getenv('SYNC_WATCHED', 'true') == 'true'
+    sync_ratings_enabled = os.getenv('SYNC_RATINGS', 'true') == 'true'
+    sync_watchlist_to_radarr_enabled = os.getenv('SYNC_WATCHLIST_TO_RADARR', 'false') == 'true'
 
     print('Starting Sync from Letterboxd to Plex')
 
@@ -236,12 +315,23 @@ def main():
 
     load_existing_mapping()
 
-    if sync_watchlist:
+    if sync_watchlist_enabled:
         sync_plex_watchlist_from_letterboxd(user, os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
-    if sync_watched:
+    if sync_watched_enabled:
         sync_plex_watched_status_from_letterboxd(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'))
-    if sync_ratings:
+    if sync_ratings_enabled:
         sync_plex_ratings_from_letterboxd(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'))
+        
+    if sync_watchlist_to_radarr_enabled:
+        radarr_url = os.getenv('RADARR_URL')
+        radarr_token = os.getenv('RADARR_TOKEN')
+
+        if not radarr_url or not radarr_token:
+            print("Radarr URL and Token are required for syncing watchlist to Radarr.")
+            return
+
+        sync_watchlist_to_radarr(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'), radarr_url, radarr_token)
+
 
     print('Sync process complete.')
 
