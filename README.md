@@ -70,8 +70,9 @@ LB_PASSWORD="your_letterboxd_password"
 TMDB_API_KEY="your_tmdb_api_key_here"
 
 # Radarr configuration (required if syncing to Radarr)
-RADARR_URL="http://your-radarr-server:7878"  # (required if syncing to Radarr)
-RADARR_TOKEN="your_radarr_api_key_here"      # (required if syncing to Radarr)
+RADARR_URL="http://your-radarr-server:7878"  # required if syncing to Radarr
+RADARR_TOKEN="your_radarr_api_key_here"      # required if syncing to Radarr
+RADARR_TAGS="letterboxd-plex-sync, auto"     # optional: set whatever tags you like, or comment this out to skip adding tags
 
 # Flags to control script behavior
 #DOWNLOAD_LETTERBOXD_DATA="true"   # Set to "true" to download Letterboxd data (default: true)

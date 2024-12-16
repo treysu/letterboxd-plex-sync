@@ -7,4 +7,4 @@ python/__pycache__/*
 */.env
 .venv
 .env
-letterboxd.env
+Load-Env.ps1

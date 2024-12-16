@@ -1,4 +1,4 @@
 Dockerfile
 python/.venv
 python/.venv/*
-README.md
+*.md

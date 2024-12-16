@@ -153,8 +153,33 @@ def sync_plex_watched_status_from_letterboxd(watched_csv='./watched.csv'):
                 print(f"Skipped marking {video.title} as played. Already marked.")
 
 
-def add_to_radarr(tmdb_id, radarr_url, radarr_token):
-    """Add a movie to Radarr using its TMDB ID."""
+def get_or_create_tag(radarr_url, radarr_token, tag_name):
+    """Fetch the ID of an existing tag or create a new one."""
+    headers = {
+        "X-Api-Key": radarr_token,
+        "Content-Type": "application/json"
+    }
+    tags_endpoint = f"{radarr_url.rstrip('/')}/api/v3/tag"
+
+    # Get existing tags
+    response = requests.get(tags_endpoint, headers=headers)
+    response.raise_for_status()
+    existing_tags = response.json()
+
+    # Check if the tag already exists
+    for tag in existing_tags:
+        if tag["label"].lower() == tag_name.lower():
+            return tag["id"]
+
+    # If tag doesn't exist, create it
+    new_tag_payload = {"label": tag_name}
+    create_response = requests.post(tags_endpoint, json=new_tag_payload, headers=headers)
+    create_response.raise_for_status()
+    new_tag = create_response.json()
+    return new_tag["id"]
+
+def add_to_radarr(tmdb_id, radarr_url, radarr_token, tag_names=None):
+    """Add a movie to Radarr using its TMDB ID and optionally assign tags by name."""
     headers = {
         "X-Api-Key": radarr_token,
         "Content-Type": "application/json"
@@ -171,8 +196,16 @@ def add_to_radarr(tmdb_id, radarr_url, radarr_token):
         "monitored": True,
         "addOptions": {
             "searchForMovie": True
-        }
+        },
     }
+
+    # Convert tag names to tag IDs
+    tag_ids = []
+    if tag_names:
+        for tag_name in tag_names:
+            tag_id = get_or_create_tag(radarr_url, radarr_token, tag_name)
+            tag_ids.append(tag_id)
+        payload["tags"] = tag_ids
 
     try:
         response = requests.post(endpoint, json=payload, headers=headers)
@@ -180,14 +213,12 @@ def add_to_radarr(tmdb_id, radarr_url, radarr_token):
         print(f"Successfully added movie with TMDB ID {tmdb_id} to Radarr.")
     except requests.exceptions.HTTPError as e:
         if response.status_code == 400:
-            # Decode the response content
             try:
                 error_details = json.loads(response.content.decode('utf-8'))
                 for error in error_details:
                     error_code = error.get("errorCode")
                     error_message = error.get("errorMessage")
 
-                    # Handle specific error cases
                     if error_code == "MovieExistsValidator":
                         print(f"Movie with TMDB ID {tmdb_id} is already in Radarr.")
                     elif "not found" in error_message:
@@ -199,7 +230,6 @@ def add_to_radarr(tmdb_id, radarr_url, radarr_token):
             except json.JSONDecodeError:
                 print(f"Failed to parse error response for TMDB ID {tmdb_id}. Response content: {response.content}")
         else:
-            # Log other HTTP errors
             print(f"Failed to add movie with TMDB ID {tmdb_id} to Radarr: {e}")
             print(f"Response status code: {response.status_code}")
             print(f"Response content: {response.content}")
@@ -209,6 +239,11 @@ def sync_watchlist_to_radarr(watchlist_csv, radarr_url, radarr_token):
     """Sync the Letterboxd watchlist to Radarr."""
     print("Syncing Letterboxd watchlist to Radarr.")
 
+    # Fetch and parse tags from the environment variable
+    radarr_tags_env = os.getenv('RADARR_TAGS', '')
+    radarr_tags = [tag.strip() for tag in radarr_tags_env.split(',')] if radarr_tags_env else []
+
+    print(f"tags: {radarr_tags}")
     existing_tmdb_ids = get_radarr_movies(radarr_url, radarr_token)
 
     with open(watchlist_csv, 'r', encoding='utf-8') as csvfile:
@@ -231,9 +266,8 @@ def sync_watchlist_to_radarr(watchlist_csv, radarr_url, radarr_token):
                     print(f"Skipping {lb_title}. Already in Radarr.")
                 continue
 
-            # Add to Radarr
-            add_to_radarr(tmdb_id, radarr_url, radarr_token)
-
+            # Add to Radarr with tags
+            add_to_radarr(tmdb_id, radarr_url, radarr_token, tag_names=radarr_tags)
 
 def get_radarr_movies(radarr_url, radarr_token):
     """Fetch the list of movies currently in Radarr."""
