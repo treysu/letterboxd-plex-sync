@@ -1,4 +1,4 @@
 letterboxd_stats==0.2.14
 plexapi==4.16.0
-Requests==2.32.3
+Requests==2.31.0
 toml==0.10.2
