@@ -11,7 +11,7 @@ The script leverages:
 Currently, it focuses on syncing:
 - ⭐ User ratings
 - 📜 Watch history
-- 🗛 Watchlist
+- 🗛 Watchlist (now with Radarr support)
 
 ## 🛠️ Environment Variables
 
@@ -28,6 +28,7 @@ The script relies on several environment variables for configuration. Here is a 
 - **`DEBUG`**: Set to `true` to enable debug logging. Defaults to `false`.
 - **`RUN_NOW`**: Set to `true` to run the sync job immediately when the container starts. Defaults to `false`.
   
+- **`PLEX_LIBRARY_NAME`**: The Plex Movies library to use. Defaults to syncing all Movie-type libraries.
 - **`PLEX_USER`**: The Plex user to use for syncing, if not the default admin.
 - **`PLEX_PIN`**: The PIN associated with the Plex user, if required.
 - **`CRON_SCHEDULE`**: The schedule for the cron job (e.g., `0 4 */1 * *` for every day at 4:00AM). Defaults to `0 4 */1 * *`.
@@ -58,7 +59,8 @@ The script relies on several environment variables for configuration. Here is a 
 PLEX_BASEURL="http://your-plex-server:32400"
 PLEX_TOKEN="your_plex_token_here"
 
-# Plex user details (optional)
+# Plex details (optional depending on setup)
+#PLEX_LIBRARY_NAME='Movies'        # Optional: to sync only one library
 #PLEX_USER="your_plex_username"    # Optional: switch to a specific Plex user
 #PLEX_PIN="your_plex_pin_here"     # Optional: required if switching Plex user
 
