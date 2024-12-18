@@ -2,7 +2,9 @@
 
 A tool that syncs [Letterboxd](https://letterboxd.com/) user data (ratings, watch history, and watchlists) to a personal [Plex](https://www.plex.tv/) server. THIS IS A ONE WAY SYNC. This tool aims to enhance your Plex experience by keeping your viewing stats up to date with your Letterboxd profile! 🚀
 
-## 🔧 How It Works
+## ⚙️ How It Works
+
+This project simplifies syncing Letterboxd data to Plex by offering a simple Python script, as well as a Docker container wrapping that script with a cron process for easy deployment and automation. 
 
 The script leverages:
 - [Plex API wrapper](https://github.com/pkkid/python-plexapi) to interact with your Plex server.
@@ -12,6 +14,54 @@ Currently, it focuses on syncing:
 - ⭐ User ratings
 - 📜 Watch history
 - 🗛 Watchlist (now with Radarr support)
+
+
+### 🎯 The Script
+The core functionality is provided by a Python script that:
+1. **Fetches Data**: Downloads user data from Letterboxd using the `letterboxd_stats` library.
+2. **Processes Metadata**: Maps Letterboxd data to Plex-compatible IDs using TMDB for additional metadata when required.
+3. **Syncs Data**: Updates the Plex server by:
+   - Adding ratings from Letterboxd.
+   - Marking movies as watched/unwatched.
+   - Syncing the Letterboxd watchlist, optionally integrating with Radarr.
+
+The script behavior is highly configurable through environment variables, allowing users to tailor the sync to their specific requirements.
+
+📚 Library Selection
+
+The script can sync data across all movie-type libraries in your Plex server. However, if you'd like to target a specific library, you can set the `PLEX_LIBRARY_NAME` environment variable. For example:
+
+- If `PLEX_LIBRARY_NAME` is set (e.g., "Movies"), the script will sync data only with that library.
+- If `PLEX_LIBRARY_NAME` is not set, the script will automatically iterate through all movie libraries in your Plex server, ensuring comprehensive syncing without additional configuration.
+
+🎞️ Radarr Integration
+
+For users who manage their media with Radarr, the script offers an additional integration:
+
+- When the `SYNC_WATCHLIST_TO_RADARR` (default: `false`) environment variable is set to `true`, the script will take movies from your Letterboxd watchlist and add them to Radarr as monitored movies.
+- To enable this, you must provide:
+  - `RADARR_URL`: The base URL for your Radarr server.
+  - `RADARR_TOKEN`: The API key for authenticating with Radarr.
+  - Optionally, specify `RADARR_TAGS` to tag these movies (e.g., `letterboxd-plex-sync`), helping you organize and manage additions in Radarr.
+
+### 🧊 Docker Container Integration
+The Python script is wrapped within a lightweight Docker container that automates execution via a cron process. The container:
+1. **Runs Immediately (Optional)**: With the `RUN_NOW` environment variable, the sync job can execute as soon as the container starts.
+2. **Schedules Jobs**: A cron process schedules recurring sync jobs based on the `CRON_SCHEDULE` environment variable.
+3. **Logs Activity**: Outputs logs to a combined file for easy monitoring of sync activities and troubleshooting.
+
+### 🕒 Automation via Cron
+The cron job in the container ensures periodic syncing by:
+- Running the `sync_lb_to_plex.py` script as specified in the `CRON_SCHEDULE`.
+- Managing both standard output and error logs in a unified file (`/app/combined_log.txt`), with timestamps for better traceability.
+
+### 📂 Configuration and Portability
+The container is designed for ease of use:
+- Configurations are passed as environment variables in a `.env` file.
+- Users can choose between running the script locally or using Docker, depending on their preferences and setup.
+
+This design ensures seamless integration with your existing Plex server and minimal manual intervention once deployed.
+
 
 ## 🛠️ Environment Variables
 
