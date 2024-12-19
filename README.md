@@ -27,14 +27,14 @@ The core functionality is provided by a Python script that:
 
 The script behavior is highly configurable through environment variables, allowing users to tailor the sync to their specific requirements.
 
-📚 Library Selection
+### 📚 Library Selection
 
 The script can sync data across all movie-type libraries in your Plex server. However, if you'd like to target a specific library, you can set the `PLEX_LIBRARY_NAME` environment variable. For example:
 
 - If `PLEX_LIBRARY_NAME` is set (e.g., "Movies"), the script will sync data only with that library.
 - If `PLEX_LIBRARY_NAME` is not set, the script will automatically iterate through all movie libraries in your Plex server, ensuring comprehensive syncing without additional configuration.
 
-🎞️ Radarr Integration
+### 🎞️ Radarr Integration
 
 For users who manage their media with Radarr, the script offers an additional integration:
 
