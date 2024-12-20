@@ -50,11 +50,6 @@ The Python script is wrapped within a lightweight Docker container that automate
 2. **Schedules Jobs**: A cron process schedules recurring sync jobs based on the `CRON_SCHEDULE` environment variable.
 3. **Logs Activity**: Outputs logs to a combined file for easy monitoring of sync activities and troubleshooting.
 
-### 🕒 Automation via Cron
-The cron job in the container ensures periodic syncing by:
-- Running the `sync_lb_to_plex.py` script as specified in the `CRON_SCHEDULE`.
-- Managing both standard output and error logs in a unified file (`/app/combined_log.txt`), with timestamps for better traceability.
-
 ### 📂 Configuration and Portability
 The container is designed for ease of use:
 - Configurations are passed as environment variables in a `.env` file.
