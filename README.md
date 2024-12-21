@@ -80,6 +80,10 @@ The script relies on several environment variables for configuration. Here is a 
 
 - **`RADARR_URL`**: The base URL of your Radarr server (e.g., `http://your-radarr-server:7878`). Required if syncing watchlist to Radarr.
 - **`RADARR_TOKEN`**: The API key for your Radarr server. Required if syncing watchlist to Radarr.
+- **`RADARR_TAGS`**: A comma-separated list of tags to assign to movies added to Radarr. Tags must exist in Radarr or will be created automatically if they don’t. Optional.
+- **`RADARR_ROOT_FOLDER`**: The root folder path in Radarr where new movies will be added (e.g., `/movies`). Defaults to `/movies` if not provided. Optional.
+- **`RADARR_MONITORED`**: Whether to set movies as monitored in Radarr. Set to `true` to enable or `false` to disable. Defaults to `true`. Optional.
+- **`RADARR_QUALITY_PROFILE`**: The name of the quality profile to use in Radarr (e.g., `HD - 1080p`). If not provided or not found, defaults to the profile with ID `1`. Optional.
 
 - **`DOWNLOAD_LETTERBOXD_DATA`**: Set to `true` to download Letterboxd data. Defaults to `true`.
 - **`MAP_LETTERBOXD_TO_TMDB`**: Set to `true` to map Letterboxd URLs to TMDB IDs. Defaults to `true`.
@@ -120,6 +124,9 @@ TMDB_API_KEY="your_tmdb_api_key_here"
 RADARR_URL="http://your-radarr-server:7878"  # required if syncing to Radarr
 RADARR_TOKEN="your_radarr_api_key_here"      # required if syncing to Radarr
 RADARR_TAGS="letterboxd-plex-sync, auto"     # optional: set whatever tags you like, or comment this out to skip adding tags
+#RADARR_ROOT_FOLDER='/movies'
+#RADARR_MONITORED='true'
+#RADARR_QUALITY_PROFILE='Bluray 4K Preferred'
 
 # Flags to control script behavior
 #DOWNLOAD_LETTERBOXD_DATA="true"   # Set to "true" to download Letterboxd data (default: true)
