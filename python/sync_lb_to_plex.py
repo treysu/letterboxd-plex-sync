@@ -185,15 +185,26 @@ def add_to_radarr(tmdb_id, radarr_url, radarr_token, tag_names=None):
         "Content-Type": "application/json"
     }
 
+    # Fetch the root folder path from the environment variable, default to "/movies"
+    
+    quality_profile_name = os.getenv('RADARR_QUALITY_PROFILE')
+    quality_profile = get_quality_profile_id(radarr_url, radarr_token, quality_profile_name) if quality_profile_name else None
+    quality_profile = quality_profile or 1
+    
+    # Fetch the root folder path from the environment variable, default to "/movies"
+    root_folder_path = os.getenv('RADARR_ROOT_FOLDER', '/movies')
+    
+    radarr_monitored = os.getenv('RADARR_MONITORED', 'true') == 'true'
+
     # Radarr API endpoint for adding movies
     endpoint = f"{radarr_url.rstrip('/')}/api/v3/movie"
 
     # Movie data payload
     payload = {
         "tmdbId": tmdb_id,
-        "qualityProfileId": 1,  # Adjust based on your Radarr setup
-        "rootFolderPath": "/movies",  # Adjust your root folder path
-        "monitored": True,
+        "qualityProfileId": int(quality_profile),  # Adjust based on your Radarr setup
+        "rootFolderPath": root_folder_path,  # Adjust your root folder path
+        "monitored": radarr_monitored,
         "addOptions": {
             "searchForMovie": True
         },
@@ -283,6 +294,36 @@ def get_radarr_movies(radarr_url, radarr_token):
         print(f"Failed to fetch movies from Radarr: {e}")
         return set()  # Return an empty set on failure
 
+def get_quality_profile_id(radarr_url, radarr_token, profile_name):
+    """
+    Retrieve the ID of a quality profile in Radarr by its name.
+    
+    Args:
+        radarr_url (str): The base URL for the Radarr instance.
+        radarr_token (str): The API key for the Radarr instance.
+        profile_name (str): The name of the quality profile to search for.
+    
+    Returns:
+        int or None: The ID of the quality profile, or None if not found.
+    """
+    headers = {"X-Api-Key": radarr_token}
+    endpoint = f"{radarr_url.rstrip('/')}/api/v3/qualityprofile"
+
+    try:
+        response = requests.get(endpoint, headers=headers)
+        response.raise_for_status()
+        quality_profiles = response.json()
+
+        for profile in quality_profiles:
+            if profile['name'].lower() == profile_name.lower():
+                return profile['id']
+        
+        # Return None if no match is found
+        return None
+
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to fetch quality profiles from Radarr: {e}")
+        return None
 
 
 def main():
