@@ -72,25 +72,27 @@ The script relies on several environment variables for configuration. Here is a 
 ### Optional Environment Variables
 - **`DEBUG`**: Set to `true` to enable debug logging. Defaults to `false`.
 - **`RUN_NOW`**: Set to `true` to run the sync job immediately when the container starts. Defaults to `false`.
-  
+####  
+- **`CRON_SCHEDULE`**: The schedule for the cron job (e.g., `0 4 */1 * *` for every day at 4:00AM). Defaults to `0 4 */1 * *`.
+####
+- **`SYNC_WATCHLIST`**: Set to `true` to sync the watchlist from Letterboxd to Plex. Defaults to `true`.
+- **`SYNC_WATCHED`**: Set to `true` to sync watched status from Letterboxd to Plex. Defaults to `true`.
+- **`SYNC_RATINGS`**: Set to `true` to sync user ratings from Letterboxd to Plex. Defaults to `true`.
 - **`PLEX_LIBRARY_NAME`**: The Plex Movies library to use. Defaults to syncing all Movie-type libraries.
 - **`PLEX_USER`**: The Plex user to use for syncing, if not the default admin.
 - **`PLEX_PIN`**: The PIN associated with the Plex user, if required.
-- **`CRON_SCHEDULE`**: The schedule for the cron job (e.g., `0 4 */1 * *` for every day at 4:00AM). Defaults to `0 4 */1 * *`.
-
+####
+- **`SYNC_WATCHLIST_TO_RADARR`**: Set to `true` to sync the Letterboxd watchlist to Radarr. Defaults to `false`.
 - **`RADARR_URL`**: The base URL of your Radarr server (e.g., `http://your-radarr-server:7878`). Required if syncing watchlist to Radarr.
 - **`RADARR_TOKEN`**: The API key for your Radarr server. Required if syncing watchlist to Radarr.
 - **`RADARR_TAGS`**: A comma-separated list of tags to assign to movies added to Radarr. Tags must exist in Radarr or will be created automatically if they don’t. Optional.
 - **`RADARR_ROOT_FOLDER`**: The root folder path in Radarr where new movies will be added (e.g., `/movies`). Defaults to `/movies` if not provided. Optional.
-- **`RADARR_MONITORED`**: Whether to set movies as monitored in Radarr. Set to `true` to enable or `false` to disable. Defaults to `true`. Optional.
+- **`RADARR_MONITORED`**: Whether to set movies as monitored in Radarr. Defaults to `true`.
+- **`RADARR_SEARCH`**: Whether to search for the movie after it is added to Radarr.  Defaults to `true`.
 - **`RADARR_QUALITY_PROFILE`**: The name of the quality profile to use in Radarr (e.g., `HD - 1080p`). If not provided or not found, defaults to the profile with ID `1`. Optional.
-
-- **`DOWNLOAD_LETTERBOXD_DATA`**: Set to `true` to download Letterboxd data. Defaults to `true`.
-- **`MAP_LETTERBOXD_TO_TMDB`**: Set to `true` to map Letterboxd URLs to TMDB IDs. Defaults to `true`.
-- **`SYNC_WATCHLIST`**: Set to `true` to sync the watchlist from Letterboxd to Plex. Defaults to `true`.
-- **`SYNC_WATCHED`**: Set to `true` to sync watched status from Letterboxd to Plex. Defaults to `true`.
-- **`SYNC_RATINGS`**: Set to `true` to sync user ratings from Letterboxd to Plex. Defaults to `true`.
-- **`SYNC_WATCHLIST_TO_RADARR`**: Set to `true` to sync the Letterboxd watchlist to Radarr. Defaults to `false`.
+####
+- **`DOWNLOAD_LETTERBOXD_DATA`**: Set to `true` to download Letterboxd data. Must be set to `true` for program to run normally. 
+- **`MAP_LETTERBOXD_TO_TMDB`**: Set to `true` to map Letterboxd URLs to TMDB IDs. Must be set to `true` for program to run normally.
 
 
 ### Example `letterboxd.env`
@@ -120,13 +122,14 @@ LB_PASSWORD="your_letterboxd_password"
 # TMDB API key (required for TMDB lookups)
 TMDB_API_KEY="your_tmdb_api_key_here"
 
-# Radarr configuration (required if syncing to Radarr)
+# Radarr configuration
 RADARR_URL="http://your-radarr-server:7878"  # required if syncing to Radarr
 RADARR_TOKEN="your_radarr_api_key_here"      # required if syncing to Radarr
 RADARR_TAGS="letterboxd-plex-sync, auto"     # optional: set whatever tags you like, or comment this out to skip adding tags
-#RADARR_ROOT_FOLDER='/movies'
-#RADARR_MONITORED='true'
-#RADARR_QUALITY_PROFILE='Bluray 4K Preferred'
+#RADARR_ROOT_FOLDER='/movies'                # Radarr desintation folder. default: '/movies'
+#RADARR_MONITORED='true'                     # Monitor movie in Radarr. default: 'true'  
+#RADARR_SEARCH='true'                        # Search movie after adding. default: 'true' 
+#RADARR_QUALITY_PROFILE='HD - 1080p'         # default: Whichever profile has index 1 (usually 'Any')
 
 # Flags to control script behavior
 #DOWNLOAD_LETTERBOXD_DATA="true"   # Set to "true" to download Letterboxd data (default: true)

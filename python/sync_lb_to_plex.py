@@ -195,6 +195,7 @@ def add_to_radarr(tmdb_id, radarr_url, radarr_token, tag_names=None):
     root_folder_path = os.getenv('RADARR_ROOT_FOLDER', '/movies')
     
     radarr_monitored = os.getenv('RADARR_MONITORED', 'true') == 'true'
+    radarr_search = os.getenv('RADARR_SEARCH', 'true') == 'true'
 
     # Radarr API endpoint for adding movies
     endpoint = f"{radarr_url.rstrip('/')}/api/v3/movie"
@@ -206,7 +207,7 @@ def add_to_radarr(tmdb_id, radarr_url, radarr_token, tag_names=None):
         "rootFolderPath": root_folder_path,  # Adjust your root folder path
         "monitored": radarr_monitored,
         "addOptions": {
-            "searchForMovie": True
+            "searchForMovie": radarr_search
         },
     }
 
