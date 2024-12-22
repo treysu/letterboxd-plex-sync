@@ -382,50 +382,42 @@ def main():
 
     # Optionally, use the first Movie library found (or handle multiple as needed)
     for movies_library in movie_libraries:
-        print(f'Using Plex Movie library: {movies_library.title}')
-
         # Build Plex GUID lookup table for fast access
         print('-Building GUID lookup table...')
         for item in movies_library.all():
             plex_guid_lookup_table[item.guid] = item
-            plex_guid_lookup_table.update({guid.id: item for guid in item.guids})
 
-        if download_letterboxd_data:
-            print('Downloading Letterboxd user data...')
-            downloader = ws.Downloader()
-            downloader.login()
-            downloader.download_stats()
 
-        if map_letterboxd_to_tmdb:
-            print('Mapping Letterboxd links to TMDB ID...')
-            populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'), letterboxd_to_tmdb_csv)
-            populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'), letterboxd_to_tmdb_csv)
-            populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'), letterboxd_to_tmdb_csv)
+    if download_letterboxd_data:
+        print('Downloading Letterboxd user data...')
+        downloader = ws.Downloader()
+        downloader.login()
+        downloader.download_stats()
 
-        #if reset_plex_data:
-        #    reset_plex_watchlist(account)
-        #    reset_plex_library(movies_library)
+    if map_letterboxd_to_tmdb:
+        print('Mapping Letterboxd links to TMDB ID...')
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'), letterboxd_to_tmdb_csv)
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'), letterboxd_to_tmdb_csv)
+        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'), letterboxd_to_tmdb_csv)
 
-        load_existing_mapping(letterboxd_to_tmdb_csv)
+    load_existing_mapping(letterboxd_to_tmdb_csv)
 
-        if sync_watchlist_enabled:
-            sync_plex_watchlist_from_letterboxd(user, os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
-        if sync_watched_enabled:
-            sync_plex_watched_status_from_letterboxd(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'))
-        if sync_ratings_enabled:
-            sync_plex_ratings_from_letterboxd(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'))
+    if sync_watchlist_enabled:
+        sync_plex_watchlist_from_letterboxd(user, os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
+    if sync_watched_enabled:
+        sync_plex_watched_status_from_letterboxd(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'))
+    if sync_ratings_enabled:
+        sync_plex_ratings_from_letterboxd(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'))
+        
+    if sync_watchlist_to_radarr_enabled:
+        radarr_url = os.getenv('RADARR_URL')
+        radarr_token = os.getenv('RADARR_TOKEN')
 
-        if sync_watchlist_to_radarr_enabled:
-            radarr_url = os.getenv('RADARR_URL')
-            radarr_token = os.getenv('RADARR_TOKEN')
+        if not radarr_url or not radarr_token:
+            print("Radarr URL and Token are required for syncing watchlist to Radarr.")
+            return
 
-            if not radarr_url or not radarr_token:
-                print("Radarr URL and Token are required for syncing watchlist to Radarr.")
-                return
-
-            sync_watchlist_to_radarr(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'), radarr_url, radarr_token)
-
-        print(f'Finished Sync for {movies_library.title}')
+        sync_watchlist_to_radarr(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'), radarr_url, radarr_token)
 
     print('Sync process complete.')
 
