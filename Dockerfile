@@ -12,7 +12,6 @@ WORKDIR /app
 # Copy application files
 COPY ./python/generate_config.py .  
 COPY ./python/sync_lb_to_plex.py .
-COPY ./python/timing.py .
 COPY ./python/requirements.txt .
 COPY ./scripts/sync_job_wrapper.sh .
 
