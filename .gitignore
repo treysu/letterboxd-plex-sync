@@ -7,4 +7,5 @@ python/__pycache__/*
 */.env
 .venv
 .env
+*.log
 Load-Env.ps1

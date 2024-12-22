@@ -90,9 +90,7 @@ The script relies on several environment variables for configuration. Here is a 
 - **`RADARR_MONITORED`**: Whether to set movies as monitored in Radarr. Defaults to `true`.
 - **`RADARR_SEARCH`**: Whether to search for the movie after it is added to Radarr.  Defaults to `true`.
 - **`RADARR_QUALITY_PROFILE`**: The name of the quality profile to use in Radarr (e.g., `HD - 1080p`). If not provided or not found, defaults to the profile with ID `1`. Optional.
-####
-- **`DOWNLOAD_LETTERBOXD_DATA`**: Set to `true` to download Letterboxd data. Must be set to `true` for program to run normally. 
-- **`MAP_LETTERBOXD_TO_TMDB`**: Set to `true` to map Letterboxd URLs to TMDB IDs. Must be set to `true` for program to run normally.
+
 
 
 ### Example `letterboxd.env`
@@ -130,10 +128,6 @@ RADARR_TAGS="letterboxd-plex-sync, auto"     # optional: set whatever tags you l
 #RADARR_MONITORED='true'                     # Monitor movie in Radarr. default: 'true'  
 #RADARR_SEARCH='true'                        # Search movie after adding. default: 'true' 
 #RADARR_QUALITY_PROFILE='HD - 1080p'         # default: Whichever profile has index 1 (usually 'Any')
-
-# Flags to control script behavior
-#DOWNLOAD_LETTERBOXD_DATA="true"   # Set to "true" to download Letterboxd data (default: true)
-#MAP_LETTERBOXD_TO_TMDB="true"     # Set to "true" to map Letterboxd URLs to TMDB IDs (default: true)
 
 # Sync options (set to "true" or "false" to enable/disable)
 #SYNC_WATCHLIST="true"               # default: true

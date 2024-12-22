@@ -4,7 +4,7 @@ import os
 import sys
 import csv
 import json
-import timing
+import logging
 import requests
 from plexapi.exceptions import BadRequest
 from plexapi.server import PlexServer
@@ -17,11 +17,28 @@ current_script_path = os.path.abspath(__file__)
 current_script_dir = os.path.dirname(current_script_path)
 os.chdir(current_script_dir)
 
+DEBUG = os.getenv('DEBUG', 'false') != 'false'
+
+log_level = logging.INFO
+if DEBUG:
+    log_level = logging.DEBUG
+
+
+# Configure logging
+logging.basicConfig(
+    level=log_level,
+    format='%(asctime)s.%(msecs)03d %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler("sync.log"),  # Log to a file
+        logging.StreamHandler()          # Log to the console
+    ]
+)
+
 letterboxd_to_tmdb_map = {}
 plex_guid_lookup_table = {}
 
 # Set DEBUG mode based on the environment variable
-DEBUG = os.getenv('DEBUG', 'false') != 'false'
 
 def populate_letterboxd_tmdb_mapping_file(csv_path, letterboxd_to_tmdb_mapping_csv):
     """Build the Letterboxd to TMDB mapping file if necessary."""
@@ -40,13 +57,11 @@ def populate_letterboxd_tmdb_mapping_file(csv_path, letterboxd_to_tmdb_mapping_c
                 try:
                     tmdb_id = ws.get_tmdb_id(lb_url, False)
                 except Exception:
-                    if DEBUG:
-                        print(f"Failed to scrape TMDB ID for {lb_title}")
+                    logging.debug(f"Failed to scrape TMDB ID for {lb_title}")
                     continue
 
                 new_mappings += f"{lb_url},{tmdb_id}\n"
-                if DEBUG:
-                    print(f"Added mapping for {lb_title}")
+                logging.debug(f"Added mapping for {lb_title}")
 
         with open(letterboxd_to_tmdb_mapping_csv, 'a', encoding='utf-8') as csvfile:
             csvfile.write(new_mappings)
@@ -66,14 +81,12 @@ def get_plex_video_by_letterboxd_url(lb_url):
         tmdb_id = letterboxd_to_tmdb_map[lb_url]
         return plex_guid_lookup_table[f"tmdb://{tmdb_id}"]
     except KeyError as e:
-        if DEBUG:
-            print(f"Failed to find video for {lb_url}. Reason: {e}")
+        logging.debug(f"Failed to find video for {lb_url}. Reason: {e}")
         return None
 
 
 def sync_plex_ratings_from_letterboxd(ratings_csv='./ratings'):
     """Sync user ratings from Letterboxd to Plex."""
-    print('Syncing Plex user ratings from Letterboxd.')
 
     with open(ratings_csv, 'r', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
@@ -85,23 +98,20 @@ def sync_plex_ratings_from_letterboxd(ratings_csv='./ratings'):
 
             video = get_plex_video_by_letterboxd_url(lb_url)
             if not video:
-                if DEBUG:
-                    print(f"Rating: Failed to find: {lb_title}")
+                logging.debug(f"Rating: Failed to find: {lb_title}")
                 continue
 
             lb_rating = float(row[4]) * 2  # Convert Letterboxd's X/5 to Plex's X/10 rating system
 
             if video.userRating != lb_rating:
                 video.rate(lb_rating)
-                print(f"Rated {video.title} at {lb_rating}/10")
-            elif DEBUG:
-                print(f"Skipped rating {video.title}. Already rated.")
+                logging.debug(f"Rated {video.title} at {lb_rating}/10")
+            else:
+                logging.debug(f"Skipped rating {video.title}. Already rated at {video.userRating}/10")
 
 
 def sync_plex_watchlist_from_letterboxd(user, watchlist_csv='./watchlist.csv'):
     """Sync user watchlist from Letterboxd to Plex."""
-    print('Syncing Plex user watchlist from Letterboxd.')
-
     current_watchlist = user.watchlist()
 
     with open(watchlist_csv, 'r', encoding='utf-8') as csvfile:
@@ -114,24 +124,21 @@ def sync_plex_watchlist_from_letterboxd(user, watchlist_csv='./watchlist.csv'):
 
             video = get_plex_video_by_letterboxd_url(lb_url)
             if not video:
-                if DEBUG:
-                    print(f"Watchlist: Failed to find in Plex: {lb_title}")
+                logging.debug(f"Watchlist: Failed to find in Plex: {lb_title}")
                 continue
 
             if not any(v.guid == video.guid for v in current_watchlist):
                 try:
                     video.addToWatchlist(user)
-                    print(f"Added {video.title} to watchlist.")
+                    logging.info(f"Added to watchlist: {video.title}")
                 except BadRequest:
-                    print(f"An error occured when adding {video.title} to watchlist.") 
-            elif DEBUG:
-                print(f"Already on watchlist: {video.title}")
+                    logging.error(f"An error occured when adding \"{video.title}\" to watchlist.") 
+            else:
+                logging.debug(f"Already on watchlist: {video.title}")
 
 
 def sync_plex_watched_status_from_letterboxd(watched_csv='./watched.csv'):
     """Sync user watched status from Letterboxd to Plex."""
-    print('Syncing Plex user watched data from Letterboxd.')
-
     with open(watched_csv, 'r', encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         next(reader)  # Skip the header
@@ -142,15 +149,14 @@ def sync_plex_watched_status_from_letterboxd(watched_csv='./watched.csv'):
 
             video = get_plex_video_by_letterboxd_url(lb_url)
             if not video:
-                if DEBUG:
-                    print(f"Watched: Failed to find: {lb_title}")
+                logging.debug(f"Watched: Failed to find: {lb_title}")
                 continue
 
             if not video.isPlayed:
                 video.markPlayed()
-                print(f"Marked {video.title} as played.")
-            elif DEBUG:
-                print(f"Skipped marking {video.title} as played. Already marked.")
+                logging.info(f"Marked {video.title} as played.")
+            else:
+                logging.debug(f"Skipped marking {video.title} as played. Already marked.")
 
 
 def get_or_create_tag(radarr_url, radarr_token, tag_name):
@@ -222,7 +228,7 @@ def add_to_radarr(tmdb_id, radarr_url, radarr_token, tag_names=None):
     try:
         response = requests.post(endpoint, json=payload, headers=headers)
         response.raise_for_status()
-        print(f"Successfully added movie with TMDB ID {tmdb_id} to Radarr.")
+        logging.info(f"Successfully added movie with TMDB ID {tmdb_id} to Radarr.")
     except requests.exceptions.HTTPError as e:
         if response.status_code == 400:
             try:
@@ -232,30 +238,29 @@ def add_to_radarr(tmdb_id, radarr_url, radarr_token, tag_names=None):
                     error_message = error.get("errorMessage")
 
                     if error_code == "MovieExistsValidator":
-                        print(f"Movie with TMDB ID {tmdb_id} is already in Radarr.")
+                        logging.warning(f"Movie with TMDB ID {tmdb_id} is already in Radarr.")
                     elif "A movie with this ID was not found" in error_message:
-                        print(f"A movie with TMDB ID {tmdb_id} was not found in Radarr search.")
+                        logging.warning(f"A movie with TMDB ID {tmdb_id} was not found in Radarr search.")
                     elif error_code == "MoviePathValidator":
-                        print(f"Path conflict for TMDB ID {tmdb_id}: {error_message}")
+                        logging.warning(f"Path conflict for TMDB ID {tmdb_id}: {error_message}")
                     else:
-                        print(f"Unhandled Radarr error for TMDB ID {tmdb_id}: {error_message}")
+                        logging.error(f"Unhandled Radarr error for TMDB ID {tmdb_id}: {error_message}")
             except json.JSONDecodeError:
-                print(f"Failed to parse error response for TMDB ID {tmdb_id}. Response content: {response.content}")
+                logging.error(f"Failed to parse error response for TMDB ID {tmdb_id}. Response content: {response.content}")
         else:
-            print(f"Failed to add movie with TMDB ID {tmdb_id} to Radarr: {e}")
-            print(f"Response status code: {response.status_code}")
-            print(f"Response content: {response.content}")
-            print(f"Payload: {payload}")
+            logging.warning(f"Failed to add movie with TMDB ID {tmdb_id} to Radarr: {e}")
+            logging.warning(f"Response status code: {response.status_code}")
+            logging.warning(f"Response content: {response.content}")
+            logging.warning(f"Payload: {payload}")
 
 def sync_watchlist_to_radarr(watchlist_csv, radarr_url, radarr_token):
     """Sync the Letterboxd watchlist to Radarr."""
-    print("Syncing Letterboxd watchlist to Radarr.")
 
     # Fetch and parse tags from the environment variable
     radarr_tags_env = os.getenv('RADARR_TAGS', '')
     radarr_tags = [tag.strip() for tag in radarr_tags_env.split(',')] if radarr_tags_env else []
 
-    print(f"tags: {radarr_tags}")
+    logging.info(f"tags: {radarr_tags}")
     existing_tmdb_ids = get_radarr_movies(radarr_url, radarr_token)
 
     with open(watchlist_csv, 'r', encoding='utf-8') as csvfile:
@@ -269,13 +274,11 @@ def sync_watchlist_to_radarr(watchlist_csv, radarr_url, radarr_token):
             # Fetch TMDB ID for the movie
             tmdb_id = letterboxd_to_tmdb_map.get(lb_url)
             if not tmdb_id:
-                if DEBUG:
-                    print(f"Radarr Sync: Failed to find TMDB ID for {lb_title}")
+                logging.debug(f"Radarr Sync: Failed to find TMDB ID for {lb_title}")
                 continue
 
             if int(tmdb_id) in existing_tmdb_ids:
-                if DEBUG:
-                    print(f"Skipping {lb_title}. Already in Radarr.")
+                logging.debug(f"Skipping {lb_title}. Already in Radarr.")
                 continue
 
             # Add to Radarr with tags
@@ -292,7 +295,7 @@ def get_radarr_movies(radarr_url, radarr_token):
         movies = response.json()
         return {movie['tmdbId'] for movie in movies}  # Return a set of TMDB IDs
     except requests.exceptions.RequestException as e:
-        print(f"Failed to fetch movies from Radarr: {e}")
+        logging.error(f"Failed to fetch movies from Radarr: {e}")
         return set()  # Return an empty set on failure
 
 def get_quality_profile_id(radarr_url, radarr_token, profile_name):
@@ -323,23 +326,34 @@ def get_quality_profile_id(radarr_url, radarr_token, profile_name):
         return None
 
     except requests.exceptions.RequestException as e:
-        print(f"Failed to fetch quality profiles from Radarr: {e}")
+        logging.error(f"Failed to fetch quality profiles from Radarr: {e}")
         return None
 
 
 def main():
     """Main function to sync Letterboxd data with Plex."""
     
+    disclaimer = """
+    ****************************************************
+    WARNING: This program comes with NO WARRANTY.
+    Use it at your own risk. The authors are not responsible 
+    for any damage or data loss that may occur as a result 
+    of using this software.
+    ****************************************************
+    """
+    logging.warning(disclaimer)
+
+    logging.info("========================================")
+    logging.info("Starting Letterboxd-Plex Sync Program")
+    logging.info("========================================")
+        
     letterboxd_to_tmdb_csv = os.getenv('LB_TMDB_MAP_CSV_PATH_OVERRIDE', '/app/data/lb_URL_to_tmdb_id.csv')
-    download_letterboxd_data = os.getenv('DOWNLOAD_LETTERBOXD_DATA', 'true') == 'true'
     map_letterboxd_to_tmdb = os.getenv('MAP_LETTERBOXD_TO_TMDB', 'true') == 'true'
-    sync_watchlist_enabled = os.getenv('SYNC_WATCHLIST', 'true') == 'true'
+    sync_watchlist_to_plex_enabled = os.getenv('SYNC_WATCHLIST', 'true') == 'true'
     sync_watched_enabled = os.getenv('SYNC_WATCHED', 'true') == 'true'
     sync_ratings_enabled = os.getenv('SYNC_RATINGS', 'true') == 'true'
     sync_watchlist_to_radarr_enabled = os.getenv('SYNC_WATCHLIST_TO_RADARR', 'false') == 'true'
     plex_library_name = os.getenv('PLEX_LIBRARY_NAME')
-
-    print('Starting Sync from Letterboxd to Plex')
 
     # Ensure the Letterboxd-to-TMDB CSV file exists
     open(letterboxd_to_tmdb_csv, 'a', encoding='utf-8').close()
@@ -349,7 +363,7 @@ def main():
     plex_token = os.getenv('PLEX_TOKEN')
 
     if not plex_base_url or not plex_token:
-        print("Plex base URL and token are required. Please set them in environment variables.")
+        logging.error("PLEX_BASEURL and PLEX_TOKEN are required. Please set them in environment variables.")
         return
 
     plex = PlexServer(plex_base_url, plex_token)
@@ -363,7 +377,11 @@ def main():
     else:
         user = account  # Use admin account by default
 
-    print(f'Using Plex user and library: {user.title}')
+    logging.info('Downloading Letterboxd user data...')
+    downloader = ws.Downloader()
+    downloader.login()
+    downloader.download_stats()
+
 
     if plex_library_name:
         movie_libraries = [plex.library.section(plex_library_name)]
@@ -371,7 +389,6 @@ def main():
             raise Exception(f"No Movie library named ""{plex_library_name}"" found on the Plex server!")
         
     else:
-        print('Finding Movie libraries...')
         all_libraries = plex.library.sections()
         movie_libraries = [lib for lib in all_libraries if lib.type == 'movie']
         
@@ -383,43 +400,45 @@ def main():
     # Optionally, use the first Movie library found (or handle multiple as needed)
     for movies_library in movie_libraries:
         # Build Plex GUID lookup table for fast access
-        print('-Building GUID lookup table...')
+        logging.info(f'Adding all movies from \"{movies_library.title}\" to GUID lookup table...')
         for item in movies_library.all():
             plex_guid_lookup_table[item.guid] = item
 
 
-    if download_letterboxd_data:
-        print('Downloading Letterboxd user data...')
-        downloader = ws.Downloader()
-        downloader.login()
-        downloader.download_stats()
 
-    if map_letterboxd_to_tmdb:
-        print('Mapping Letterboxd links to TMDB ID...')
-        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'), letterboxd_to_tmdb_csv)
-        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'), letterboxd_to_tmdb_csv)
-        populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'), letterboxd_to_tmdb_csv)
-
+    logging.info('Mapping Letterboxd links to TMDB ID...')
+    populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'), letterboxd_to_tmdb_csv)
+    populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'), letterboxd_to_tmdb_csv)
+    populate_letterboxd_tmdb_mapping_file(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'), letterboxd_to_tmdb_csv)
     load_existing_mapping(letterboxd_to_tmdb_csv)
 
-    if sync_watchlist_enabled:
-        sync_plex_watchlist_from_letterboxd(user, os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
+
+    if sync_watchlist_to_plex_enabled or sync_watched_enabled or sync_ratings_enabled:
+        logging.info(f'Using Plex user \"{user.title}\"')
+
     if sync_watched_enabled:
+        logging.info("Syncing Letterboxd watched status to Plex...")
         sync_plex_watched_status_from_letterboxd(os.getenv('LETTERBOXD_WATCHED_CSV', '/tmp/static/watched.csv'))
     if sync_ratings_enabled:
+        logging.info("Syncing Letterboxd ratings to Plex...")
         sync_plex_ratings_from_letterboxd(os.getenv('LETTERBOXD_RATINGS_CSV', '/tmp/static/ratings.csv'))
+
+    if sync_watchlist_to_plex_enabled:
+        logging.info("Syncing Letterboxd watchlist to Plex...")
+        sync_plex_watchlist_from_letterboxd(user, os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'))
         
     if sync_watchlist_to_radarr_enabled:
         radarr_url = os.getenv('RADARR_URL')
         radarr_token = os.getenv('RADARR_TOKEN')
 
         if not radarr_url or not radarr_token:
-            print("Radarr URL and Token are required for syncing watchlist to Radarr.")
+            logging.error("Radarr URL and Token are required for syncing watchlist to Radarr.")
             return
-
+        
+        logging.info("Syncing Letterboxd watchlist to Radarr.")
         sync_watchlist_to_radarr(os.getenv('LETTERBOXD_WATCHLIST_CSV', '/tmp/static/watchlist.csv'), radarr_url, radarr_token)
 
-    print('Sync process complete.')
+    logging.info('Sync process complete.')
 
 
 
@@ -427,5 +446,5 @@ if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        print('Process interrupted.')
+        logging.error('Process interrupted.')
         sys.exit(0)
