@@ -233,8 +233,8 @@ def add_to_radarr(tmdb_id, radarr_url, radarr_token, tag_names=None):
 
                     if error_code == "MovieExistsValidator":
                         print(f"Movie with TMDB ID {tmdb_id} is already in Radarr.")
-                    elif "not found" in error_message:
-                        print(f"Invalid TMDB ID {tmdb_id}: {error_message}")
+                    elif "A movie with this ID was not found" in error_message:
+                        print(f"A movie with TMDB ID {tmdb_id} was not found in Radarr search.")
                     elif error_code == "MoviePathValidator":
                         print(f"Path conflict for TMDB ID {tmdb_id}: {error_message}")
                     else:
