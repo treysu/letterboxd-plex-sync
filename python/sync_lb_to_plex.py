@@ -403,7 +403,7 @@ def main():
         logging.info(f'Adding all movies from \"{movies_library.title}\" to GUID lookup table...')
         for item in movies_library.all():
             plex_guid_lookup_table[item.guid] = item
-
+            plex_guid_lookup_table.update({guid.id: item for guid in item.guids})
 
 
     logging.info('Mapping Letterboxd links to TMDB ID...')
