@@ -17,7 +17,7 @@ COPY ./scripts/sync_job_wrapper.sh .
 
 RUN chmod +x sync_job_wrapper.sh
 
-# Replace letterboxd_stats==0.2.14 with GitHub fork in requirements.txt
+# Replace letterboxd_stats==0.2.14 with GitHub fork in requirements.txt 
 RUN sed -i 's|letterboxd_stats==0.2.14|git+https://github.com/treysu/letterboxd_stats.git@main#egg=letterboxd_stats|' requirements.txt
 
 # Install Python dependencies
