@@ -29,4 +29,4 @@ os.makedirs(os.path.dirname(config_path), exist_ok=True)  # Create directory if 
 with open(config_path, 'w') as config_file:
     toml.dump(config, config_file)
 
-print(f"Config file generated at: {config_path}")
+print(f"Config file generated at: {config_path}. You can ignore this if you are running in a container.")
