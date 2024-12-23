@@ -18,7 +18,7 @@ COPY ./scripts/sync_job_wrapper.sh .
 RUN chmod +x sync_job_wrapper.sh
 
 
-# Install Python dependencies
+# Install Python dependencies 
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy cron placeholder
