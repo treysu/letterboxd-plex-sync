@@ -3,7 +3,7 @@ FROM python:3.10-slim
 
 # Install dependencies in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cron vim && \
+    git cron vim && \
     rm -rf /var/lib/apt/lists/*
 
 # Set working directory
