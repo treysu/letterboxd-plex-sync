@@ -2,9 +2,8 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches-ignore: # Ignore specific branches if needed
+      - 'gh-pages'   # Example of an ignored branch
     paths-ignore:
       - 'README.md'
       - '**/*.md'
@@ -33,26 +32,22 @@ jobs:
       - name: Set Docker Image Tag
         id: vars
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          BRANCH=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
             echo "TAG=latest" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == "refs/heads/dev" ]]; then
+          elif [[ "${{ github.ref_name }}" == "dev" ]]; then
             echo "TAG=dev" >> $GITHUB_ENV
           else
-            echo "TAG=${{ github.sha }}" >> $GITHUB_ENV
+            echo "TAG=${BRANCH}" >> $GITHUB_ENV
           fi
+          echo "SHA_TAG=${{ github.sha }}" >> $GITHUB_ENV
 
-      # Optionally, add a unique Git commit SHA tag
-      - name: Push with Git SHA Tag
+      # Build and push the Docker image with branch tag
+      - name: Build and Push Docker Image with Branch Tag
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ github.sha }}
-
-      # Build and push the Docker image with appropriate tag
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ env.TAG }}
+          tags: |
+            ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ env.TAG }}
+            ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ env.SHA_TAG }}
