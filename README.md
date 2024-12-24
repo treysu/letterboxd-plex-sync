@@ -154,6 +154,7 @@ services:
     container_name: letterboxd-plex-sync
     image: treysu/letterboxd-plex-sync:latest
     restart: unless-stopped
+    #platform: linux/x86_64 # typically only needed for Apple Silicon
     env_file:
       - path: letterboxd.env
         required: true
