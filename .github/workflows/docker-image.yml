@@ -48,7 +48,7 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ env.TAG }}
             ${{ secrets.DOCKER_HUB_USERNAME }}/letterboxd-plex-sync:${{ env.SHA_TAG }}
