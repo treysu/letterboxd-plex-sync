@@ -59,7 +59,11 @@ def populate_letterboxd_tmdb_mapping_file(csv_path, letterboxd_to_tmdb_mapping_c
                 except Exception:
                     logging.debug(f"Failed to scrape TMDB ID for {lb_title}")
                     continue
-
+                
+                if tmdb_id is None:
+                    logging.debug(f"Failed to find valid TMDB Movie ID for {lb_title}")
+                    continue
+                
                 new_mappings += f"{lb_url},{tmdb_id}\n"
                 logging.debug(f"Added mapping for {lb_title}")
 
@@ -273,7 +277,7 @@ def sync_watchlist_to_radarr(watchlist_csv, radarr_url, radarr_token):
 
             # Fetch TMDB ID for the movie
             tmdb_id = letterboxd_to_tmdb_map.get(lb_url)
-            if not tmdb_id:
+            if tmdb_id is None:
                 logging.debug(f"Radarr Sync: Failed to find TMDB ID for {lb_title}")
                 continue
 
