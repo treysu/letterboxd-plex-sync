@@ -382,7 +382,7 @@ def main():
         user = account  # Use admin account by default
 
     logging.info('Downloading Letterboxd user data...')
-    downloader = ws.Downloader()
+    downloader = ws.Connector()
     downloader.login()
     downloader.download_stats()
 
