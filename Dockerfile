@@ -3,7 +3,7 @@ FROM python:3.10-slim
 
 # Install dependencies in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cron vim && \
+    git cron vim && \
     rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -17,8 +17,7 @@ COPY ./scripts/sync_job_wrapper.sh .
 
 RUN chmod +x sync_job_wrapper.sh
 
-
-# Install Python dependencies 
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy cron placeholder
