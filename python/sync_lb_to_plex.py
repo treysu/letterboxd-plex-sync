@@ -8,9 +8,10 @@ import sys
 
 import requests
 from letterboxd_stats import web_scraper as ws
-from plexapi.exceptions import BadRequest
+from plexapi.exceptions import BadRequest, NotFound
 from plexapi.myplex import MyPlexAccount
 from plexapi.server import PlexServer
+from plexapi.utils import searchType
 
 # Change the current working directory to the location of this script
 current_script_path = os.path.abspath(__file__)
@@ -88,6 +89,22 @@ def get_plex_video_by_letterboxd_url(lb_url):
         logging.debug(f"Failed to find video for {lb_url}. Reason: {e}")
         return None
 
+def get_plex_video_by_tmdb_id(tmdb_id, libtype='movie'):
+
+    plex = PlexServer('https://metadata.provider.plex.tv', token=os.getenv('PLEX_TOKEN'))
+
+    guid = 'tmdb://' + tmdb_id
+    logging.debug(f"Querying Plex for GUID {guid}")
+
+    try:
+        video = plex.fetchItem(f'/library/metadata/matches?type={searchType(libtype)}&guid={guid}')
+    except NotFound as e:
+        logging.warning(f"Plex could not find a match for TMDb GUID {guid}: {e}")
+        video = None
+    except Exception as e:
+        logging.error(f"Unexpected error during Plex fetchItem for GUID {guid}: {e}", exc_info=True)
+        video = None
+    return video
 
 def sync_plex_ratings_from_letterboxd(ratings_csv='./ratings'):
     """Sync user ratings from Letterboxd to Plex."""
@@ -127,6 +144,13 @@ def sync_plex_watchlist_from_letterboxd(user, watchlist_csv='./watchlist.csv'):
             lb_url = row[3]
 
             video = get_plex_video_by_letterboxd_url(lb_url)
+            if not video:
+                tmdb_id = letterboxd_to_tmdb_map.get(lb_url)
+                if not tmdb_id:
+                    logging.warning(f"Skipping: No TMDB ID found for {lb_url}")
+                    continue  # or return
+                video = get_plex_video_by_tmdb_id(tmdb_id)
+
             if not video:
                 logging.debug(f"Watchlist: Failed to find in Plex: {lb_title}")
                 continue
