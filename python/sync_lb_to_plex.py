@@ -39,6 +39,8 @@ logging.basicConfig(
 letterboxd_to_tmdb_map = {}
 plex_guid_lookup_table = {}
 
+
+
 # Set DEBUG mode based on the environment variable
 
 def populate_letterboxd_tmdb_mapping_file(csv_path, letterboxd_to_tmdb_mapping_csv):
@@ -86,18 +88,16 @@ def get_plex_video_by_letterboxd_url(lb_url):
         tmdb_id = letterboxd_to_tmdb_map[lb_url]
         return plex_guid_lookup_table[f"tmdb://{tmdb_id}"]
     except KeyError as e:
-        logging.debug(f"Failed to find video for {lb_url}. Reason: {e}")
+        logging.debug(f"Failed to find video in Plex Library for {lb_url}. Reason: {e}")
         return None
 
 def get_plex_video_by_tmdb_id(tmdb_id, libtype='movie'):
-
-    plex = PlexServer('https://metadata.provider.plex.tv', token=os.getenv('PLEX_TOKEN'))
 
     guid = 'tmdb://' + tmdb_id
     logging.debug(f"Querying Plex for GUID {guid}")
 
     try:
-        video = plex.fetchItem(f'/library/metadata/matches?type={searchType(libtype)}&guid={guid}')
+        video = plex_metadata_server.fetchItem(f'/library/metadata/matches?type={searchType(libtype)}&guid={guid}')
     except NotFound as e:
         logging.warning(f"Plex could not find a match for TMDb GUID {guid}: {e}")
         video = None
@@ -395,6 +395,7 @@ def main():
         return
 
     plex = PlexServer(plex_base_url, plex_token)
+
     account = MyPlexAccount(token=plex_token)
 
     plex_user_name = os.getenv('PLEX_USER')
