@@ -39,6 +39,7 @@ logging.basicConfig(
 letterboxd_to_tmdb_map = {}
 plex_guid_lookup_table = {}
 
+plex_metadata_server = PlexServer('https://metadata.provider.plex.tv', token=os.getenv('PLEX_TOKEN'))
 
 
 # Set DEBUG mode based on the environment variable
