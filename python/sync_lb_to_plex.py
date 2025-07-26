@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import sys
+import time
 
 import requests
 from letterboxd_stats import web_scraper as ws
@@ -59,6 +60,7 @@ def populate_letterboxd_tmdb_mapping_file(csv_path, letterboxd_to_tmdb_mapping_c
 
             if lb_url not in letterboxd_to_tmdb_map:
                 try:
+                    time.sleep(15)
                     tmdb_id = ws.get_tmdb_id(lb_url, False)
                 except Exception:
                     logging.debug(f"Failed to scrape TMDB ID for {lb_title}")
